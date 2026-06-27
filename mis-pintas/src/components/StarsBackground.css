@@ -1,0 +1,27 @@
+.stars-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nebula {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nebula-1 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(120, 80, 200, 0.18) 0%, transparent 70%);
+  top: -60px; right: -40px;
+}
+
+.nebula-2 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(60, 40, 140, 0.14) 0%, transparent 70%);
+  bottom: 200px; left: -40px;
+}
