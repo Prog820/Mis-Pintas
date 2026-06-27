@@ -1,35 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const DIAS_SEMANA = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-
-// Outfits de ejemplo asignados a días específicos
-const outfitsCalendario = {
-  '2026-06-01': { emoji: '👗', nombre: 'Vestido floral', prendas: { top: '👗', pantalon: '🩱', bolso: '👛', zapatos: '👠', accesorio: '📿' } },
-  '2026-06-03': { emoji: '🧥', nombre: 'Dark casual', prendas: { top: '🧥', pantalon: '👖', bolso: '👜', zapatos: '👟', accesorio: '🕶️' } },
-  '2026-06-08': { emoji: '👕', nombre: 'Uni look', prendas: { top: '👕', pantalon: '👖', bolso: '🎒', zapatos: '👟', accesorio: '💍' } },
-  '2026-06-10': { emoji: '👗', nombre: 'Date night', prendas: { top: '👗', pantalon: '🩱', bolso: '👛', zapatos: '👠', accesorio: '💍' } },
-  '2026-06-15': { emoji: '👚', nombre: 'Domingo chill', prendas: { top: '👚', pantalon: '🩳', bolso: '🎒', zapatos: '🥿', accesorio: '🕶️' } },
-  '2026-06-17': { emoji: '🧥', nombre: 'Elegante total', prendas: { top: '🧥', pantalon: '🩱', bolso: '👜', zapatos: '👠', accesorio: '📿' } },
-  '2026-06-22': { emoji: '👕', nombre: 'Casual viernes', prendas: { top: '👕', pantalon: '👖', bolso: '👜', zapatos: '👟', accesorio: '📿' } },
-  '2026-06-25': { emoji: '👗', nombre: 'Vestido azul', prendas: { top: '👗', pantalon: '🩱', bolso: '👛', zapatos: '👠', accesorio: '💍' } },
-}
 
 function fechaKey(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
 function CollageMini({ prendas }) {
+  const Slot = ({ prenda, height }) => (
+    <div style={{
+      background: '#f5f5f7', borderRadius: 8, height,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    }}>
+      {prenda?.foto_url
+        ? <img src={prenda.foto_url} alt={prenda.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        : <span style={{ fontSize: '0.6rem', color: '#ccc' }}>—</span>
+      }
+    </div>
+  )
+
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <div style={{ background: '#f5f5f7', borderRadius: 8, height: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem' }}>{prendas.top}</div>
-        <div style={{ background: '#f5f5f7', borderRadius: 8, height: 85, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem' }}>{prendas.pantalon}</div>
+        <Slot prenda={prendas?.top} height={70} />
+        <Slot prenda={prendas?.pantalon} height={85} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <div style={{ background: '#f5f5f7', borderRadius: 8, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>{prendas.bolso}</div>
-        <div style={{ background: '#f5f5f7', borderRadius: 8, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>{prendas.zapatos}</div>
-        <div style={{ background: '#f5f5f7', borderRadius: 8, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>{prendas.accesorio}</div>
+        <Slot prenda={prendas?.bolso} height={50} />
+        <Slot prenda={prendas?.zapatos} height={50} />
+        <Slot prenda={prendas?.accesorio} height={50} />
       </div>
     </div>
   )
@@ -40,12 +41,80 @@ const Calendario = () => {
   const [anio, setAnio] = useState(hoy.getFullYear())
   const [mes, setMes] = useState(hoy.getMonth())
   const [diaSeleccionado, setDiaSeleccionado] = useState(hoy.getDate())
+  const [outfitsCalendario, setOutfitsCalendario] = useState({})
+  const [pintas, setPintas] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [modalElegir, setModalElegir] = useState(false)
 
-  const primerDia = new Date(anio, mes, 1).getDay()
+  useEffect(() => {
+    cargarDatos()
+  }, [mes, anio])
+
+  async function cargarDatos() {
+    setCargando(true)
+
+    const primerDia = fechaKey(anio, mes, 1)
+    const ultimoDia = fechaKey(anio, mes, new Date(anio, mes + 1, 0).getDate())
+
+    const { data: calData } = await supabase
+      .from('calendario')
+      .select(`
+        *,
+        outfit:outfit_id(
+          *,
+          top:top_id(*),
+          pantalon:pantalon_id(*),
+          bolso:bolso_id(*),
+          zapatos:zapatos_id(*),
+          accesorio:accesorio_id(*)
+        )
+      `)
+      .gte('fecha', primerDia)
+      .lte('fecha', ultimoDia)
+
+    const { data: pintasData } = await supabase
+      .from('outfits')
+      .select(`*, top:top_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
+      .order('created_at', { ascending: false })
+
+    if (calData) {
+      const mapa = {}
+      calData.forEach(entry => { mapa[entry.fecha] = entry })
+      setOutfitsCalendario(mapa)
+    }
+
+    if (pintasData) setPintas(pintasData)
+
+    setCargando(false)
+  }
+
+  async function asignarPinta(outfitId) {
+    const fecha = fechaKey(anio, mes, diaSeleccionado)
+    const existente = outfitsCalendario[fecha]
+
+    if (existente) {
+      await supabase.from('calendario').update({ outfit_id: outfitId }).eq('id', existente.id)
+    } else {
+      await supabase.from('calendario').insert({ fecha, outfit_id: outfitId })
+    }
+
+    setModalElegir(false)
+    await cargarDatos()
+  }
+
+  async function quitarPinta() {
+    const fecha = fechaKey(anio, mes, diaSeleccionado)
+    const existente = outfitsCalendario[fecha]
+    if (existente) {
+      await supabase.from('calendario').delete().eq('id', existente.id)
+      await cargarDatos()
+    }
+  }
+
+  const primerDiaSemana = new Date(anio, mes, 1).getDay()
   const diasEnMes = new Date(anio, mes + 1, 0).getDate()
-
   const celdas = []
-  for (let i = 0; i < primerDia; i++) celdas.push(null)
+  for (let i = 0; i < primerDiaSemana; i++) celdas.push(null)
   for (let d = 1; d <= diasEnMes; d++) celdas.push(d)
 
   const mesAnterior = () => {
@@ -62,7 +131,8 @@ const Calendario = () => {
 
   const esHoy = (d) => d === hoy.getDate() && mes === hoy.getMonth() && anio === hoy.getFullYear()
   const keySeleccionado = diaSeleccionado ? fechaKey(anio, mes, diaSeleccionado) : null
-  const outfitSeleccionado = keySeleccionado ? outfitsCalendario[keySeleccionado] : null
+  const entradaSeleccionada = keySeleccionado ? outfitsCalendario[keySeleccionado] : null
+  const outfitSeleccionado = entradaSeleccionada?.outfit
 
   return (
     <div style={{ padding: '52px 20px 100px', minHeight: '100vh' }}>
@@ -91,12 +161,13 @@ const Calendario = () => {
         ))}
       </div>
 
-      {/* Grid de días */}
+      {/* Grid días */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 24 }}>
         {celdas.map((dia, i) => {
           if (!dia) return <div key={`e-${i}`} />
           const key = fechaKey(anio, mes, dia)
-          const outfit = outfitsCalendario[key]
+          const entrada = outfitsCalendario[key]
+          const fotoTop = entrada?.outfit?.top?.foto_url
           const seleccionado = dia === diaSeleccionado
           const hoyDia = esHoy(dia)
 
@@ -105,40 +176,31 @@ const Calendario = () => {
               key={dia}
               onClick={() => setDiaSeleccionado(dia)}
               style={{
-                aspectRatio: '1',
-                borderRadius: 10,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
+                aspectRatio: '1', borderRadius: 10,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', overflow: 'hidden',
                 background: seleccionado ? 'rgba(155,127,240,0.25)' : 'transparent',
                 border: hoyDia ? '1.5px solid rgba(155,127,240,0.6)' : seleccionado ? '1.5px solid rgba(155,127,240,0.4)' : '1.5px solid transparent',
-                transition: 'all 0.15s',
-                gap: 2,
+                transition: 'all 0.15s', gap: 1,
               }}
             >
-              <span style={{ fontSize: outfit ? '1.1rem' : '0.7rem', lineHeight: 1 }}>
-                {outfit ? outfit.emoji : dia}
-              </span>
-              {outfit && (
-                <span style={{ fontSize: '0.55rem', color: '#8b7ec8' }}>{dia}</span>
-              )}
-              {!outfit && (
-                <span style={{ display: 'none' }}></span>
+              {fotoTop ? (
+                <>
+                  <img src={fotoTop} alt="" style={{ width: '70%', height: '60%', objectFit: 'contain' }} />
+                  <span style={{ fontSize: '0.5rem', color: '#8b7ec8' }}>{dia}</span>
+                </>
+              ) : (
+                <span style={{ fontSize: '0.7rem', color: hoyDia ? '#c4b0ff' : '#6b5fa0' }}>{dia}</span>
               )}
             </div>
           )
         })}
       </div>
 
-      {/* Panel del día seleccionado */}
+      {/* Panel día seleccionado */}
       {diaSeleccionado && (
-        <div style={{
-          background: 'rgba(255,255,255,0.97)',
-          borderRadius: 20,
-          padding: 18,
-        }}>
+        <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 20, padding: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               {diaSeleccionado} de {MESES[mes].toUpperCase()} {anio}
@@ -150,30 +212,95 @@ const Calendario = () => {
 
           {outfitSeleccionado ? (
             <>
-              <CollageMini prendas={outfitSeleccionado.prendas} />
-              <p style={{ fontSize: '0.85rem', fontWeight: 500, color: '#333', margin: '10px 0 4px' }}>{outfitSeleccionado.nombre}</p>
+              <CollageMini prendas={outfitSeleccionado} />
+              <p style={{ fontSize: '0.85rem', fontWeight: 500, color: '#333', margin: '10px 0 4px' }}>
+                {outfitSeleccionado.nombre}
+              </p>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#f0ebff', color: '#6b4fcf', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                <button
+                  onClick={() => setModalElegir(true)}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#f0ebff', color: '#6b4fcf', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                   Cambiar pinta
                 </button>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#1a0a3e', color: '#c4b0ff', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ✨ Sugerir con IA
+                <button
+                  onClick={quitarPinta}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #f0ebff', background: 'transparent', color: '#aaa', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                  Quitar pinta
                 </button>
               </div>
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 14 }}>Sin pinta asignada</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e0d8f0', background: 'transparent', color: '#7c6bb0', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  Elegir pinta
-                </button>
-                <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#1a0a3e', color: '#c4b0ff', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-                  ✨ Sugerir con IA
-                </button>
-              </div>
+              <button
+                onClick={() => setModalElegir(true)}
+                style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#1a0a3e', color: '#c4b0ff', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+                Elegir pinta
+              </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal elegir pinta */}
+      {modalElegir && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px 20px 80px 20px',
+        }}>
+          <div style={{
+            background: '#13112a', borderRadius: 20,
+            padding: '24px 20px', width: '100%', maxWidth: 430,
+            maxHeight: '85vh', overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#ede9ff', fontSize: '1.1rem', fontWeight: 400 }}>
+                Elegir pinta
+              </h2>
+              <button onClick={() => setModalElegir(false)} style={{ background: 'none', border: 'none', color: '#6b5fa0', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {pintas.length === 0 ? (
+              <p style={{ color: '#6b5fa0', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
+                No tienes pintas guardadas todavía
+              </p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {pintas.map(pinta => (
+                  <div
+                    key={pinta.id}
+                    onClick={() => asignarPinta(pinta.id)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(150,120,255,0.15)',
+                      borderRadius: 12, padding: 10, cursor: 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <div style={{ background: '#fff', borderRadius: 8, padding: 6, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {[pinta.top, pinta.pantalon].map((p, i) => (
+                          <div key={i} style={{ background: '#f5f5f7', borderRadius: 6, height: i === 0 ? 40 : 50, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {p?.foto_url ? <img src={p.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.5rem', color: '#ccc' }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {[pinta.bolso, pinta.zapatos, pinta.accesorio].map((p, i) => (
+                          <div key={i} style={{ background: '#f5f5f7', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {p?.foto_url ? <img src={p.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.5rem', color: '#ccc' }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '0.72rem', color: '#d4cef5', fontFamily: 'Inter, sans-serif' }}>{pinta.nombre}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
