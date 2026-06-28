@@ -1,26 +1,71 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import './Inicio.css'
 
-const semana = [
-  { dia: 'Lun', outfit: '👗' },
-  { dia: 'Mar', outfit: '👕' },
-  { dia: 'Mié', outfit: '🧥' },
-  { dia: 'Jue', outfit: null },
-  { dia: 'Vie', outfit: null },
-  { dia: 'Sáb', outfit: null },
-  { dia: 'Dom', outfit: null },
-]
-
-const hoy = new Date()
-const fechaHoy = hoy.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
-const diaHoyIndex = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
+const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 const Inicio = () => {
   const navigate = useNavigate()
+  const [outfitHoy, setOutfitHoy] = useState(null)
+  const [semana, setSemana] = useState([])
+  const [cargando, setCargando] = useState(true)
+
+  const hoy = new Date()
+  const fechaHoy = hoy.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+  const diaHoyIndex = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
+
+  useEffect(() => {
+    cargarDatos()
+  }, [])
+
+  async function cargarDatos() {
+    setCargando(true)
+
+    // Fechas de la semana actual (lun a dom)
+    const lunes = new Date(hoy)
+    lunes.setDate(hoy.getDate() - diaHoyIndex)
+
+    const fechasSemana = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(lunes)
+      d.setDate(lunes.getDate() + i)
+      return d.toISOString().split('T')[0]
+    })
+
+    const { data } = await supabase
+      .from('calendario')
+      .select(`
+        fecha,
+        outfit:outfit_id(
+          *,
+          top:top_id(*),
+          pantalon:pantalon_id(*),
+          bolso:bolso_id(*),
+          zapatos:zapatos_id(*),
+          accesorio:accesorio_id(*)
+        )
+      `)
+      .in('fecha', fechasSemana)
+
+    const mapa = {}
+    if (data) data.forEach(e => { mapa[e.fecha] = e.outfit })
+
+    const fechaHoyKey = hoy.toISOString().split('T')[0]
+    setOutfitHoy(mapa[fechaHoyKey] || null)
+
+    setSemana(fechasSemana.map((fecha, i) => ({
+      dia: DIAS[i],
+      outfit: mapa[fecha] || null,
+      fecha,
+    })))
+
+    setCargando(false)
+  }
 
   return (
     <div className="inicio-page">
 
+      {/* Topbar */}
       <div className="inicio-topbar">
         <div>
           <p className="inicio-greeting-sub">✦ buenos días</p>
@@ -29,51 +74,73 @@ const Inicio = () => {
         <div className="inicio-avatar">M</div>
       </div>
 
+      {/* Card pinta de hoy */}
       <div className="inicio-today-card">
         <div className="today-card-header">
           <span className="today-label">✦ pinta de hoy</span>
           <span className="today-date">{fechaHoy}</span>
         </div>
-        <div className="today-outfit">
-          <div className="outfit-slot">
-            <div className="outfit-img sm">👜</div>
-            <span className="outfit-label">bolso</span>
+
+        {cargando ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#bbb', fontSize: '0.85rem' }}>
+            Cargando...
           </div>
-          <div className="outfit-slot">
-            <div className="outfit-img tall">👚</div>
-            <span className="outfit-label">camisa</span>
+        ) : outfitHoy ? (
+          <div className="today-outfit">
+            {[
+              { prenda: outfitHoy.bolso, label: 'bolso', cls: 'sm' },
+              { prenda: outfitHoy.top, label: 'camisa', cls: 'tall' },
+              { prenda: outfitHoy.pantalon, label: 'pantalón', cls: 'tall' },
+              { prenda: outfitHoy.zapatos, label: 'zapatos', cls: 'md' },
+              { prenda: outfitHoy.accesorio, label: 'accesorio', cls: 'sm' },
+            ].map(({ prenda, label, cls }) => (
+              <div key={label} className="outfit-slot">
+                <div className={`outfit-img ${cls}`}>
+                  {prenda?.foto_url
+                    ? <img src={prenda.foto_url} alt={label} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : '?'
+                  }
+                </div>
+                <span className="outfit-label">{label}</span>
+              </div>
+            ))}
           </div>
-          <div className="outfit-slot">
-            <div className="outfit-img tall">👖</div>
-            <span className="outfit-label">pantalón</span>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <p style={{ color: '#bbb', fontSize: '0.85rem', marginBottom: 12 }}>No hay pinta para hoy</p>
+            <button
+              onClick={() => navigate('/calendario')}
+              style={{ padding: '8px 18px', borderRadius: 20, border: '1px solid #e0d8f0', background: 'transparent', color: '#7c6bb0', fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+            >
+              Asignar pinta
+            </button>
           </div>
-          <div className="outfit-slot">
-            <div className="outfit-img md">👟</div>
-            <span className="outfit-label">zapatos</span>
-          </div>
-          <div className="outfit-slot">
-            <div className="outfit-img sm">💍</div>
-            <span className="outfit-label">accesorio</span>
-          </div>
-        </div>
+        )}
+
         <div className="today-actions">
           <button className="btn-usar">Usar esta pinta</button>
           <button className="btn-cambiar" onClick={() => navigate('/armario')}>Cambiar</button>
         </div>
       </div>
 
+      {/* Semana */}
       <p className="section-label">✦ esta semana</p>
       <div className="semana-row">
         {semana.map((item, i) => (
           <div key={i} className="dia-chip">
             <span className="dia-name">{item.dia}</span>
             <div className={`dia-dot ${i === diaHoyIndex ? 'today' : ''} ${!item.outfit ? 'vacio' : ''}`}>
-              {item.outfit ?? '+'}
+              {item.outfit?.top?.foto_url ? (
+                <img src={item.outfit.top.foto_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%' }} />
+              ) : (
+                '+'
+              )}
             </div>
           </div>
         ))}
       </div>
 
+      {/* Explorar */}
       <p className="section-label">✦ explorar</p>
       <div className="quick-grid">
         <div className="quick-card" onClick={() => navigate('/armario')}>
@@ -98,6 +165,7 @@ const Inicio = () => {
         </div>
       </div>
 
+      {/* Banner IA */}
       <div className="ia-banner" onClick={() => navigate('/ia')}>
         <div className="ia-icon-wrap">✨</div>
         <div className="ia-text">
