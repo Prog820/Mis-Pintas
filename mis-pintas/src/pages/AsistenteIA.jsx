@@ -1,20 +1,63 @@
-import { useState } from 'react'
-
-const insposEjemplo = [
-  { id: 1, emoji: '🖤', color: '#1a1a2e' },
-  { id: 2, emoji: '🌿', color: '#1a2e1a' },
-  { id: 3, emoji: '🤍', color: '#e8e8e8' },
-  { id: 4, emoji: '🌸', color: '#2e1a1a' },
-  { id: 5, emoji: '☀️', color: '#2e2a1a' },
-]
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from '../lib/supabase'
 
 const ocasiones = ['casual', 'universidad', 'salida nocturna', 'formal', 'deporte', 'cita']
 
 const AsistenteIA = () => {
-  const [inspoSeleccionada, setInspoSeleccionada] = useState(0)
+  const [inspos, setInspos] = useState([])
+  const [inspoSeleccionada, setInspoSeleccionada] = useState(null)
   const [ocasionesSeleccionadas, setOcasionesSeleccionadas] = useState(['casual'])
   const [cargando, setCargando] = useState(false)
+  const [subiendo, setSubiendo] = useState(false)
   const [resultado, setResultado] = useState(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    cargarInspos()
+  }, [])
+
+  async function cargarInspos() {
+    const { data, error } = await supabase
+      .from('inspos')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!error) setInspos(data)
+  }
+
+  async function subirInspo(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setSubiendo(true)
+
+    try {
+      const ext = file.name.split('.').pop()
+      const fileName = `inspo_${Date.now()}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('prendas')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from('prendas')
+        .getPublicUrl(fileName)
+
+      const { error: insertError } = await supabase
+        .from('inspos')
+        .insert({ foto_url: urlData.publicUrl })
+
+      if (insertError) throw insertError
+
+      await cargarInspos()
+    } catch (err) {
+      console.error('Error subiendo inspo:', err)
+      alert('Error subiendo la foto. Intenta de nuevo.')
+    }
+
+    setSubiendo(false)
+  }
 
   const toggleOcasion = (o) => {
     setOcasionesSeleccionadas(prev =>
@@ -24,9 +67,14 @@ const AsistenteIA = () => {
   }
 
   const crearPinta = () => {
+    if (!inspoSeleccionada) {
+      alert('Selecciona una foto de inspo primero')
+      return
+    }
     setCargando(true)
     setResultado(null)
-    // Simulación — después conectará con Claude API
+
+    // Simulación — después conectará con Gemini / Claude
     setTimeout(() => {
       setCargando(false)
       setResultado({
@@ -49,43 +97,56 @@ const AsistenteIA = () => {
         </h1>
       </div>
 
-      {/* Sección inspo */}
+      {/* Inspos */}
       <p style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b5fa0', marginBottom: 12 }}>
         ✦ elige tu foto de inspo
       </p>
 
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, scrollbarWidth: 'none', marginBottom: 24 }}>
-        {/* Botón agregar inspo */}
-        <div style={{
-          flexShrink: 0, width: 80, height: 100, borderRadius: 14,
-          border: '1.5px dashed rgba(150,120,255,0.35)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', gap: 4,
-        }}>
-          <span style={{ fontSize: '1.4rem', color: '#6b5fa0' }}>+</span>
-          <span style={{ fontSize: '0.6rem', color: '#6b5fa0', textAlign: 'center', lineHeight: 1.3 }}>Agregar inspo</span>
-        </div>
 
-        {insposEjemplo.map((inspo, i) => (
+        {/* Botón agregar */}
+        <div
+          onClick={() => !subiendo && inputRef.current?.click()}
+          style={{
+            flexShrink: 0, width: 80, height: 100, borderRadius: 14,
+            border: '1.5px dashed rgba(150,120,255,0.35)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            cursor: subiendo ? 'not-allowed' : 'pointer', gap: 4,
+            opacity: subiendo ? 0.5 : 1,
+          }}
+        >
+          <span style={{ fontSize: '1.4rem', color: '#6b5fa0' }}>{subiendo ? '...' : '+'}</span>
+          <span style={{ fontSize: '0.6rem', color: '#6b5fa0', textAlign: 'center', lineHeight: 1.3 }}>
+            {subiendo ? 'Subiendo...' : 'Agregar inspo'}
+          </span>
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={subirInspo} />
+
+        {/* Fotos de inspo */}
+        {inspos.map(inspo => (
           <div
             key={inspo.id}
-            onClick={() => { setInspoSeleccionada(i); setResultado(null) }}
+            onClick={() => { setInspoSeleccionada(inspo); setResultado(null) }}
             style={{
               flexShrink: 0, width: 80, height: 100, borderRadius: 14,
-              background: inspo.color,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '2rem', cursor: 'pointer',
-              border: inspoSeleccionada === i ? '2.5px solid #9b7ff0' : '2.5px solid transparent',
-              transition: 'border 0.2s',
-              boxShadow: inspoSeleccionada === i ? '0 0 12px rgba(155,127,240,0.4)' : 'none',
+              overflow: 'hidden', cursor: 'pointer',
+              border: inspoSeleccionada?.id === inspo.id ? '2.5px solid #9b7ff0' : '2.5px solid transparent',
+              boxShadow: inspoSeleccionada?.id === inspo.id ? '0 0 12px rgba(155,127,240,0.4)' : 'none',
+              transition: 'all 0.2s',
             }}
           >
-            {inspo.emoji}
+            <img src={inspo.foto_url} alt="inspo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         ))}
+
+        {inspos.length === 0 && !subiendo && (
+          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+            <p style={{ fontSize: '0.8rem', color: '#6b5fa0' }}>Sube tu primera foto de inspiración</p>
+          </div>
+        )}
       </div>
 
-      {/* Sección ocasión */}
+      {/* Ocasión */}
       <p style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b5fa0', marginBottom: 12 }}>
         ✦ ocasión
       </p>
@@ -103,9 +164,7 @@ const AsistenteIA = () => {
               fontSize: '0.78rem', fontFamily: 'Inter, sans-serif',
               cursor: 'pointer', transition: 'all 0.2s',
             }}
-          >
-            {o}
-          </button>
+          >{o}</button>
         ))}
       </div>
 
@@ -114,13 +173,11 @@ const AsistenteIA = () => {
         onClick={crearPinta}
         disabled={cargando || ocasionesSeleccionadas.length === 0}
         style={{
-          width: '100%', padding: '14px', borderRadius: 50,
-          border: 'none',
+          width: '100%', padding: '14px', borderRadius: 50, border: 'none',
           background: cargando ? 'rgba(155,127,240,0.4)' : 'linear-gradient(135deg, #6a5acd, #9b7ff0)',
-          color: '#fff', fontSize: '0.95rem',
-          fontFamily: 'Inter, sans-serif', cursor: cargando ? 'not-allowed' : 'pointer',
-          transition: 'all 0.25s', letterSpacing: '0.03em',
-          marginBottom: 24,
+          color: '#fff', fontSize: '0.95rem', fontFamily: 'Inter, sans-serif',
+          cursor: cargando ? 'not-allowed' : 'pointer',
+          transition: 'all 0.25s', letterSpacing: '0.03em', marginBottom: 24,
         }}
       >
         {cargando ? '✨ Creando tu pinta...' : '✦ Crear pinta con IA'}
@@ -148,7 +205,6 @@ const AsistenteIA = () => {
             ✦ tu pinta sugerida
           </p>
 
-          {/* Collage resultado */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14, border: '1px solid #f0f0f0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ background: '#f5f5f7', borderRadius: 10, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{resultado.prendas.top}</div>
@@ -161,12 +217,10 @@ const AsistenteIA = () => {
             </div>
           </div>
 
-          {/* Explicación IA */}
           <p style={{ fontSize: '0.8rem', color: '#555', lineHeight: 1.6, marginBottom: 14 }}>
             {resultado.explicacion}
           </p>
 
-          {/* Botones */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#1a0a3e', color: '#c4b0ff', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
               Guardar pinta
