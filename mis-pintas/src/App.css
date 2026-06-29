@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,9 +6,9 @@
 }
 
 body {
-  background: #0a0a12;
-  color: #e8e4f0;
-  font-family: 'Inter', sans-serif;
+  background: #060b1a;
+  color: #e2eaff;
+  font-family: 'DM Sans', sans-serif;
   overflow-x: hidden;
 }
 
@@ -31,7 +30,7 @@ body {
 }
 
 .page h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 24px;
-  color: #ede9ff;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  color: #c8d8ff;
 }

@@ -5,9 +5,9 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  background: rgba(10, 8, 22, 0.95);
+  background: rgba(6, 11, 26, 0.96);
   backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(150, 120, 255, 0.1);
+  border-top: 1px solid rgba(80, 120, 255, 0.12);
   display: flex;
   justify-content: space-around;
   padding: 12px 0 28px;
@@ -20,7 +20,7 @@
   align-items: center;
   gap: 4px;
   text-decoration: none;
-  opacity: 0.45;
+  opacity: 0.4;
   transition: opacity 0.2s;
 }
 
@@ -36,18 +36,19 @@
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8b7ec8;
+  color: #6a85c8;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .nav-item.active .nav-label {
-  color: #c4b0ff;
+  color: #a8c0ff;
 }
 
 .nav-dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #9b7ff0;
+  background: #5080ff;
   margin-top: 1px;
   opacity: 0;
 }

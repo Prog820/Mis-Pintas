@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { colors, fonts } from '../styles/global'
 
 const CATEGORIAS = ['top', 'pantalon', 'bolso', 'zapatos', 'accesorio']
 const ETIQUETAS = { top: 'Top', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
@@ -9,50 +10,25 @@ function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargand
     <div style={{ position: 'relative', height: altura, borderRadius: 14, overflow: 'hidden' }}>
       <div style={{
         width: '100%', height: '100%',
-        background: prenda?.foto_url ? '#fff' : '#f5f5f7',
+        background: prenda?.foto_url ? '#fff' : '#f0f2f8',
         borderRadius: 14,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        gap: 6, transition: 'background 0.3s',
-        overflow: 'hidden',
+        gap: 6, transition: 'background 0.3s', overflow: 'hidden',
       }}>
         {cargando ? (
-          <span style={{ fontSize: '1.2rem', color: '#ccc' }}>...</span>
+          <span style={{ fontSize: '1rem', color: '#ccc' }}>...</span>
         ) : prenda?.foto_url ? (
-          <img
-            src={prenda.foto_url}
-            alt={prenda.nombre}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
+          <img src={prenda.foto_url} alt={prenda.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         ) : (
           <>
-            <span style={{ fontSize: '1.5rem', color: '#ccc' }}>?</span>
-            <span style={{ fontSize: '0.6rem', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Inter, sans-serif' }}>
-              {etiqueta}
-            </span>
+            <span style={{ fontSize: '1.3rem', color: '#ccc' }}>?</span>
+            <span style={{ fontSize: '0.65rem', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fonts.body }}>{etiqueta}</span>
           </>
         )}
       </div>
-
-      <button onClick={onAnterior} style={{
-        position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
-        width: 22, height: 22, borderRadius: '50%', border: 'none',
-        background: 'rgba(255,255,255,0.85)', color: '#9b7ff0',
-        fontSize: '1rem', cursor: 'pointer', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2,
-        lineHeight: 1, padding: 0,
-      }}>‹</button>
-
-      <button onClick={onSiguiente} style={{
-        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-        width: 22, height: 22, borderRadius: '50%', border: 'none',
-        background: 'rgba(255,255,255,0.85)', color: '#9b7ff0',
-        fontSize: '1rem', cursor: 'pointer', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2,
-        lineHeight: 1, padding: 0,
-      }}>›</button>
+      <button onClick={onAnterior} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: colors.accent, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2, lineHeight: 1, padding: 0 }}>‹</button>
+      <button onClick={onSiguiente} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: colors.accent, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2, lineHeight: 1, padding: 0 }}>›</button>
     </div>
   )
 }
@@ -70,24 +46,14 @@ const Armario = () => {
   const [previewModal, setPreviewModal] = useState(null)
   const inputRef = useRef(null)
 
-  useEffect(() => {
-    cargarPrendas()
-  }, [])
+  useEffect(() => { cargarPrendas() }, [])
 
   async function cargarPrendas() {
     setCargando(true)
-    const { data, error } = await supabase
-      .from('prendas')
-      .select('*')
-      .order('created_at', { ascending: true })
-
-    if (error) {
-      console.error('Error cargando prendas:', error)
-    } else {
+    const { data, error } = await supabase.from('prendas').select('*').order('created_at', { ascending: true })
+    if (!error) {
       const agrupadas = { top: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
-      data.forEach(p => {
-        if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p)
-      })
+      data.forEach(p => { if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p) })
       setPrendas(agrupadas)
     }
     setCargando(false)
@@ -121,95 +87,54 @@ const Armario = () => {
   async function subirPrenda() {
     if (!archivoModal || !nombreModal) return
     setSubiendo(true)
-
     try {
-      // 1. Subir foto a Supabase Storage
       const ext = archivoModal.name.split('.').pop()
       const fileName = `${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('prendas')
-        .upload(fileName, archivoModal)
-
+      const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoModal)
       if (uploadError) throw uploadError
-
-      // 2. Obtener URL pública
-      const { data: urlData } = supabase.storage
-        .from('prendas')
-        .getPublicUrl(fileName)
-
-      // 3. Guardar en tabla prendas
-      const { error: insertError } = await supabase
-        .from('prendas')
-        .insert({
-          categoria: categoriaModal,
-          nombre: nombreModal,
-          foto_url: urlData.publicUrl,
-        })
-
+      const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
+      const { error: insertError } = await supabase.from('prendas').insert({ categoria: categoriaModal, nombre: nombreModal, foto_url: urlData.publicUrl })
       if (insertError) throw insertError
-
-      // 4. Recargar prendas
       await cargarPrendas()
       setModalAgregar(false)
-
     } catch (err) {
       console.error('Error subiendo prenda:', err)
       alert('Hubo un error subiendo la prenda. Intenta de nuevo.')
     }
-
     setSubiendo(false)
   }
 
   async function guardarPinta() {
-    const top = get('top')
-    const pantalon = get('pantalon')
-    const bolso = get('bolso')
-    const zapatos = get('zapatos')
-    const accesorio = get('accesorio')
-
     const { error } = await supabase.from('outfits').insert({
       nombre: 'Mi pinta',
-      top_id: top?.id || null,
-      pantalon_id: pantalon?.id || null,
-      bolso_id: bolso?.id || null,
-      zapatos_id: zapatos?.id || null,
-      accesorio_id: accesorio?.id || null,
+      top_id: get('top')?.id || null,
+      pantalon_id: get('pantalon')?.id || null,
+      bolso_id: get('bolso')?.id || null,
+      zapatos_id: get('zapatos')?.id || null,
+      accesorio_id: get('accesorio')?.id || null,
     })
-
-    if (error) {
-      console.error('Error guardando pinta:', error)
-    } else {
+    if (!error) {
       setGuardado(true)
       setTimeout(() => setGuardado(false), 2500)
     }
   }
 
+  const labelStyle = { fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 4 }
+
   return (
     <div style={{ padding: '52px 20px 100px', minHeight: '100vh' }}>
 
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <p style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b5fa0', marginBottom: 4 }}>✦ tu armario</p>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.75rem', color: '#ede9ff', fontWeight: 400 }}>Armario</h1>
+          <p style={labelStyle}>✦ tu armario</p>
+          <h1 style={{ fontFamily: fonts.title, fontSize: '1.75rem', color: colors.textSoft, fontWeight: 600 }}>Armario</h1>
         </div>
-        <button
-          onClick={abrirModal}
-          style={{
-            width: 38, height: 38, borderRadius: '50%',
-            border: '1.5px solid rgba(150,120,255,0.4)',
-            background: 'transparent', color: '#9b7ff0',
-            fontSize: '1.3rem', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>+</button>
+        <button onClick={abrirModal} style={{ width: 38, height: 38, borderRadius: '50%', border: `1.5px solid ${colors.border}`, background: 'transparent', color: colors.accent, fontSize: '1.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
       </div>
 
-      <p style={{ fontSize: 11, color: '#6b5fa0', marginBottom: 16, letterSpacing: '0.03em' }}>
-        Toca las flechas para cambiar cada prenda
-      </p>
+      <p style={{ fontSize: 12, color: colors.textMuted, marginBottom: 16, fontFamily: fonts.body }}>Toca las flechas para cambiar cada prenda</p>
 
-      {/* Collage */}
-      <div style={{ background: '#ffffff', borderRadius: 20, padding: 14, boxShadow: '0 0 50px rgba(155,127,240,0.15)', marginBottom: 16 }}>
+      <div style={{ background: colors.white, borderRadius: 20, padding: 14, boxShadow: '0 0 50px rgba(50,100,255,0.12)', marginBottom: 16 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <SlotPrenda prenda={get('top')} etiqueta="Top" onAnterior={() => cambiar('top', -1)} onSiguiente={() => cambiar('top', 1)} altura={150} cargando={cargando} />
@@ -221,129 +146,51 @@ const Armario = () => {
             <SlotPrenda prenda={get('accesorio')} etiqueta="Accesorio" onAnterior={() => cambiar('accesorio', -1)} onSiguiente={() => cambiar('accesorio', 1)} altura={120} cargando={cargando} />
           </div>
         </div>
-
-        {/* Chips */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
           {CATEGORIAS.map(cat => {
             const p = get(cat)
-            return (
-              <span key={cat} style={{ fontSize: '0.68rem', fontFamily: 'Inter, sans-serif', background: '#f7f4ff', color: '#7c6bb0', padding: '3px 10px', borderRadius: 20 }}>
-                {p ? p.nombre : ETIQUETAS[cat] + ' —'}
-              </span>
-            )
+            return <span key={cat} style={{ fontSize: '0.72rem', fontFamily: fonts.body, background: '#eef2ff', color: colors.accentDim, padding: '3px 10px', borderRadius: 20 }}>{p ? p.nombre : ETIQUETAS[cat] + ' —'}</span>
           })}
         </div>
       </div>
 
-      {/* Botón guardar */}
-      <button
-        onClick={guardarPinta}
-        style={{
-          width: '100%', padding: '14px', borderRadius: 50,
-          border: guardado ? 'none' : '1.5px solid rgba(150,120,255,0.5)',
-          background: guardado ? 'linear-gradient(135deg, #6a5acd, #9b7ff0)' : 'transparent',
-          color: guardado ? '#fff' : '#c4b0ff',
-          fontSize: '0.95rem', fontFamily: 'Inter, sans-serif',
-          cursor: 'pointer', transition: 'all 0.25s', letterSpacing: '0.03em',
-        }}
-      >
+      <button onClick={guardarPinta} style={{ width: '100%', padding: '14px', borderRadius: 50, border: guardado ? 'none' : `1.5px solid ${colors.border}`, background: guardado ? 'linear-gradient(135deg, #2a4abf, #5080ff)' : 'transparent', color: guardado ? '#fff' : colors.accentLight, fontSize: '0.95rem', fontFamily: fonts.body, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: '0.03em' }}>
         {guardado ? '✓ Pinta guardada' : '✨ Guardar pinta'}
       </button>
 
-      {/* Modal agregar prenda */}
       {modalAgregar && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '20px 20px 80px 20px',
-        }}>
-          <div style={{
-            background: '#13112a', borderRadius: 20,
-            padding: '28px 24px 32px', width: '100%', maxWidth: 430,
-            maxHeight: '85vh', overflowY: 'auto',
-          }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 20px 80px 20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px 32px', width: '100%', maxWidth: 430, maxHeight: '85vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ fontFamily: 'Playfair Display, serif', color: '#ede9ff', fontSize: '1.2rem', fontWeight: 400 }}>
-                Agregar prenda
-              </h2>
-              <button onClick={() => setModalAgregar(false)} style={{ background: 'none', border: 'none', color: '#6b5fa0', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+              <h2 style={{ fontFamily: fonts.title, color: colors.textSoft, fontSize: '1.2rem', fontWeight: 600 }}>Agregar prenda</h2>
+              <button onClick={() => setModalAgregar(false)} style={{ background: 'none', border: 'none', color: colors.textDim, fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
             </div>
 
-            {/* Preview foto */}
-            <div
-              onClick={() => inputRef.current?.click()}
-              style={{
-                width: '100%', height: 160, borderRadius: 14,
-                border: '1.5px dashed rgba(150,120,255,0.35)',
-                background: previewModal ? 'transparent' : 'rgba(255,255,255,0.03)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', marginBottom: 16, overflow: 'hidden',
-              }}
-            >
-              {previewModal ? (
-                <img src={previewModal} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '1.8rem', marginBottom: 6 }}>📷</p>
-                  <p style={{ fontSize: '0.8rem', color: '#6b5fa0' }}>Toca para seleccionar foto</p>
-                </div>
-              )}
+            <div onClick={() => inputRef.current?.click()} style={{ width: '100%', height: 160, borderRadius: 14, border: `1.5px dashed ${colors.border}`, background: previewModal ? 'transparent' : 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginBottom: 16, overflow: 'hidden' }}>
+              {previewModal
+                ? <img src={previewModal} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                : <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '1.8rem', marginBottom: 6 }}>📷</p>
+                    <p style={{ fontSize: '0.8rem', color: colors.textMuted, fontFamily: fonts.body }}>Toca para seleccionar foto</p>
+                  </div>
+              }
             </div>
             <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={seleccionarArchivo} />
 
-            {/* Nombre */}
-            <input
-              type="text"
-              placeholder="Nombre de la prenda"
-              value={nombreModal}
-              onChange={e => setNombreModal(e.target.value)}
-              style={{
-                width: '100%', padding: '12px 14px', borderRadius: 10,
-                border: '1px solid rgba(150,120,255,0.25)',
-                background: 'rgba(255,255,255,0.04)', color: '#ede9ff',
-                fontFamily: 'Inter, sans-serif', fontSize: '0.9rem',
-                marginBottom: 12, outline: 'none',
-              }}
-            />
+            <input type="text" placeholder="Nombre de la prenda" value={nombreModal} onChange={e => setNombreModal(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.04)', color: colors.text, fontFamily: fonts.body, fontSize: '0.9rem', marginBottom: 12, outline: 'none' }} />
 
-            {/* Categoría */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
               {CATEGORIAS.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setCategoriaModal(cat)}
-                  style={{
-                    padding: '6px 12px', borderRadius: 20, fontSize: '0.75rem',
-                    fontFamily: 'Inter, sans-serif', cursor: 'pointer',
-                    border: categoriaModal === cat ? 'none' : '1px solid rgba(150,120,255,0.25)',
-                    background: categoriaModal === cat ? '#9b7ff0' : 'transparent',
-                    color: categoriaModal === cat ? '#fff' : '#8b7ec8',
-                    transition: 'all 0.2s',
-                  }}
-                >{cat}</button>
+                <button key={cat} onClick={() => setCategoriaModal(cat)} style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.75rem', fontFamily: fonts.body, cursor: 'pointer', border: categoriaModal === cat ? 'none' : `1px solid ${colors.border}`, background: categoriaModal === cat ? colors.accent : 'transparent', color: categoriaModal === cat ? '#fff' : colors.textMuted, transition: 'all 0.2s' }}>{cat}</button>
               ))}
             </div>
 
-            {/* Botón subir */}
-            <button
-              onClick={subirPrenda}
-              disabled={subiendo || !archivoModal || !nombreModal}
-              style={{
-                width: '100%', padding: '14px', borderRadius: 50, border: 'none',
-                background: subiendo || !archivoModal || !nombreModal
-                  ? 'rgba(155,127,240,0.3)'
-                  : 'linear-gradient(135deg, #6a5acd, #9b7ff0)',
-                color: '#fff', fontSize: '0.95rem',
-                fontFamily: 'Inter, sans-serif', cursor: subiendo ? 'not-allowed' : 'pointer',
-              }}
-            >
+            <button onClick={subirPrenda} disabled={subiendo || !archivoModal || !nombreModal} style={{ width: '100%', padding: '14px', borderRadius: 50, border: 'none', background: subiendo || !archivoModal || !nombreModal ? 'rgba(80,128,255,0.3)' : 'linear-gradient(135deg, #2a4abf, #5080ff)', color: '#fff', fontSize: '0.95rem', fontFamily: fonts.body, cursor: subiendo ? 'not-allowed' : 'pointer' }}>
               {subiendo ? 'Subiendo...' : 'Guardar prenda'}
             </button>
           </div>
         </div>
       )}
-
     </div>
   )
 }
