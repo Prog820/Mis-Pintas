@@ -146,22 +146,22 @@ const Inicio = ({ sesion }) => {
       <p className="section-label">✦ explorar</p>
       <div className="quick-grid">
         <div className="quick-card" onClick={() => navigate('/armario')}>
-          <span className="quick-icon">🌀</span>
+          <span className="quick-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M12 3v18M2 9h20"/></svg></span>
           <p className="quick-title">Armario</p>
           <p className="quick-sub">Combina prendas</p>
         </div>
         <div className="quick-card" onClick={() => navigate('/pintas')}>
-          <span className="quick-icon">🗂</span>
+          <span className="quick-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
           <p className="quick-title">Mis pintas</p>
           <p className="quick-sub">Outfits guardados</p>
         </div>
         <div className="quick-card" onClick={() => navigate('/calendario')}>
-          <span className="quick-icon">🗓</span>
+          <span className="quick-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
           <p className="quick-title">Calendario</p>
           <p className="quick-sub">Planea tu mes</p>
         </div>
         <div className="quick-card" onClick={() => navigate('/ia')}>
-          <span className="quick-icon">📌</span>
+          <span className="quick-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg></span>
           <p className="quick-title">Inspo</p>
           <p className="quick-sub">Tus referencias</p>
         </div>
@@ -169,7 +169,7 @@ const Inicio = ({ sesion }) => {
 
       {/* Banner IA */}
       <div className="ia-banner" onClick={() => navigate('/ia')}>
-        <div className="ia-icon-wrap">✨</div>
+        <div className="ia-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg></div>
         <div className="ia-text">
           <p className="ia-title">Crear pinta con IA</p>
           <p className="ia-sub">Sube una inspo y te armo el outfit con tu ropa</p>
