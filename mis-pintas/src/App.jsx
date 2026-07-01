@@ -39,27 +39,34 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <div className="app-wrapper">
-        <StarsBackground />
-        <main className="main-content">
+      <StarsBackground />
+      {sesion ? (
+        <div className="app-layout">
+          <main className="app-main">
+            <div className="app-content">
+              <Routes>
+                <Route path="/" element={!tieneNombre ? <Navigate to="/onboarding" /> : <Inicio sesion={sesion} />} />
+                <Route path="/armario" element={<Armario />} />
+                <Route path="/pintas" element={<MisPintas />} />
+                <Route path="/calendario" element={<Calendario />} />
+                <Route path="/ia" element={<AsistenteIA />} />
+                <Route path="/configuracion" element={<Configuracion sesion={sesion} />} />
+                <Route path="/onboarding" element={!tieneNombre ? <Onboarding /> : <Navigate to="/" />} />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </div>
+          </main>
+          <BottomNav sesion={sesion} />
+        </div>
+      ) : (
+        <div className="app-auth">
           <Routes>
-            <Route path="/login" element={!sesion ? <Login /> : <Navigate to="/" />} />
-            <Route path="/register" element={!sesion ? <Register /> : <Navigate to="/" />} />
-            <Route path="/onboarding" element={sesion && !tieneNombre ? <Onboarding /> : <Navigate to="/" />} />
-            <Route path="/configuracion" element={sesion ? <Configuracion sesion={sesion} /> : <Navigate to="/login" />} />
-            <Route path="/" element={
-              !sesion ? <Navigate to="/login" /> :
-              !tieneNombre ? <Navigate to="/onboarding" /> :
-              <Inicio sesion={sesion} />
-            } />
-            <Route path="/armario" element={sesion ? <Armario /> : <Navigate to="/login" />} />
-            <Route path="/pintas" element={sesion ? <MisPintas /> : <Navigate to="/login" />} />
-            <Route path="/calendario" element={sesion ? <Calendario /> : <Navigate to="/login" />} />
-            <Route path="/ia" element={sesion ? <AsistenteIA /> : <Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
-        </main>
-        {sesion && <BottomNav />}
-      </div>
+        </div>
+      )}
     </BrowserRouter>
   )
 }

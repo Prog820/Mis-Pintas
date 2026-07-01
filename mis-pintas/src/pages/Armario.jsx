@@ -2,12 +2,32 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
 
+
 const CATEGORIAS = ['top', 'pantalon', 'bolso', 'zapatos', 'accesorio']
 const ETIQUETAS = { top: 'Top', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
 
 function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargando }) {
+  const touchStart = useRef(null)
+
+  const onTouchStart = (e) => {
+    touchStart.current = e.touches[0].clientX
+  }
+
+  const onTouchEnd = (e) => {
+    if (touchStart.current === null) return
+    const diff = touchStart.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 30) {
+      diff > 0 ? onSiguiente() : onAnterior()
+    }
+    touchStart.current = null
+  }
+
   return (
-    <div style={{ position: 'relative', height: altura, borderRadius: 14, overflow: 'hidden' }}>
+    <div
+      style={{ position: 'relative', height: altura, borderRadius: 14, overflow: 'hidden' }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div style={{
         width: '100%', height: '100%',
         background: prenda?.foto_url ? '#fff' : '#f0f2f8',
@@ -27,8 +47,9 @@ function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargand
           </>
         )}
       </div>
-      <button onClick={onAnterior} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: colors.accent, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2, lineHeight: 1, padding: 0 }}>‹</button>
-      <button onClick={onSiguiente} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.85)', color: colors.accent, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.12)', zIndex: 2, lineHeight: 1, padding: 0 }}>›</button>
+
+      <button onClick={onAnterior} className="flecha-slot" style={{ left: 4 }}>‹</button>
+      <button onClick={onSiguiente} className="flecha-slot" style={{ right: 4 }}>›</button>
     </div>
   )
 }

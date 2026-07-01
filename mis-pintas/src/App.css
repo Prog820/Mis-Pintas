@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,17 +13,55 @@ body {
   overflow-x: hidden;
 }
 
-.app-wrapper {
+/* Auth pages — centradas */
+.app-auth {
   position: relative;
   min-height: 100vh;
+}
+
+/* Layout con sesión — mobile primero */
+.app-layout {
+  position: relative;
+  min-height: 100vh;
+}
+
+.app-main {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 90px;
+}
+
+.app-content {
   max-width: 430px;
   margin: 0 auto;
 }
 
-.main-content {
-  position: relative;
-  z-index: 1;
-  padding-bottom: 90px;
+/* Tablet */
+@media (min-width: 768px) {
+  .app-content {
+    max-width: 680px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  .app-main {
+    padding-bottom: 0;
+    overflow-y: auto;
+    height: 100vh;
+  }
+
+  .app-content {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
 }
 
 .page {
@@ -30,7 +69,32 @@ body {
 }
 
 .page h1 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Syne', sans-serif;
   font-size: 28px;
   color: #c8d8ff;
+}
+
+.flecha-slot {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px; height: 22px;
+  border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.85);
+  color: #5080ff;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  z-index: 2;
+  line-height: 1;
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .flecha-slot {
+    display: none;
+  }
 }
