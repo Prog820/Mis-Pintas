@@ -54,12 +54,100 @@ function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargand
   )
 }
 
+function InsposTab() {
+  const [inspos, setInspos] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [subiendo, setSubiendo] = useState(false)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => { cargarInspos() }, [])
+
+  async function cargarInspos() {
+    setCargando(true)
+    const { data, error } = await supabase.from('inspos').select('*').order('created_at', { ascending: false })
+    if (!error) setInspos(data)
+    setCargando(false)
+  }
+
+  async function subirInspo(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setSubiendo(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const fileName = `inspo_${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, file)
+      if (uploadError) throw uploadError
+      const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
+      const { error: insertError } = await supabase.from('inspos').insert({ foto_url: urlData.publicUrl })
+      if (insertError) throw insertError
+      await cargarInspos()
+    } catch (err) {
+      alert('Error subiendo la foto. Intenta de nuevo.')
+    }
+    setSubiendo(false)
+  }
+
+  async function eliminarInspo(inspo) {
+    const fileName = inspo.foto_url.split('/').pop()
+    await supabase.storage.from('prendas').remove([fileName])
+    await supabase.from('inspos').delete().eq('id', inspo.id)
+    setConfirmarEliminar(null)
+    await cargarInspos()
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button onClick={() => inputRef.current?.click()} disabled={subiendo} style={{ width: 38, height: 38, borderRadius: '50%', border: `1.5px solid ${colors.border}`, background: 'transparent', color: colors.accent, fontSize: '1.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {subiendo ? '...' : '+'}
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={subirInspo} />
+      </div>
+
+      {cargando ? (
+        <div style={{ textAlign: 'center', color: colors.textMuted, marginTop: 40, fontFamily: fonts.body, fontSize: '0.9rem' }}>Cargando...</div>
+      ) : inspos.length === 0 ? (
+        <div style={{ textAlign: 'center', color: colors.textMuted, marginTop: 40, fontFamily: fonts.body, fontSize: '0.9rem' }}>
+          <p style={{ marginBottom: 16 }}>Aún no tienes fotos de inspiración</p>
+          <button onClick={() => inputRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 50, border: `1.5px solid ${colors.border}`, background: 'transparent', color: colors.accentLight, fontFamily: fonts.body, fontSize: '0.85rem', cursor: 'pointer' }}>Agregar primera inspo</button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          {inspos.map(inspo => (
+            <div key={inspo.id} style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', aspectRatio: '3/4' }}>
+              <img src={inspo.foto_url} alt="inspo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => setConfirmarEliminar(inspo)} style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {confirmarEliminar && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}>
+            <img src={confirmarEliminar.foto_url} alt="inspo" style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 12, marginBottom: 20 }} />
+            <p style={{ fontSize: '0.9rem', color: colors.textSoft, fontFamily: fonts.body, marginBottom: 6, fontWeight: 500 }}>¿Eliminar esta inspo?</p>
+            <p style={{ fontSize: '0.78rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 20 }}>No se puede deshacer</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmarEliminar(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={() => eliminarInspo(confirmarEliminar)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(255,80,80,0.7)', color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const Armario = () => {
   const [prendas, setPrendas] = useState({ top: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] })
   const [indices, setIndices] = useState({ top: 0, pantalon: 0, bolso: 0, zapatos: 0, accesorio: 0 })
   const [cargando, setCargando] = useState(true)
   const [subiendo, setSubiendo] = useState(false)
   const [guardado, setGuardado] = useState(false)
+  const [pestana, setPestana] = useState('prendas')
   const [modalAgregar, setModalAgregar] = useState(false)
   const [categoriaModal, setCategoriaModal] = useState('top')
   const [nombreModal, setNombreModal] = useState('')
@@ -153,31 +241,52 @@ const Armario = () => {
         <button onClick={abrirModal} style={{ width: 38, height: 38, borderRadius: '50%', border: `1.5px solid ${colors.border}`, background: 'transparent', color: colors.accent, fontSize: '1.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
       </div>
 
-      <p style={{ fontSize: 12, color: colors.textMuted, marginBottom: 16, fontFamily: fonts.body }}>Toca las flechas para cambiar cada prenda</p>
-
-      <div style={{ background: colors.white, borderRadius: 20, padding: 14, boxShadow: '0 0 50px rgba(50,100,255,0.12)', marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <SlotPrenda prenda={get('top')} etiqueta="Top" onAnterior={() => cambiar('top', -1)} onSiguiente={() => cambiar('top', 1)} altura={150} cargando={cargando} />
-            <SlotPrenda prenda={get('pantalon')} etiqueta="Pantalón" onAnterior={() => cambiar('pantalon', -1)} onSiguiente={() => cambiar('pantalon', 1)} altura={190} cargando={cargando} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <SlotPrenda prenda={get('bolso')} etiqueta="Bolso" onAnterior={() => cambiar('bolso', -1)} onSiguiente={() => cambiar('bolso', 1)} altura={100} cargando={cargando} />
-            <SlotPrenda prenda={get('zapatos')} etiqueta="Zapatos" onAnterior={() => cambiar('zapatos', -1)} onSiguiente={() => cambiar('zapatos', 1)} altura={120} cargando={cargando} />
-            <SlotPrenda prenda={get('accesorio')} etiqueta="Accesorio" onAnterior={() => cambiar('accesorio', -1)} onSiguiente={() => cambiar('accesorio', 1)} altura={120} cargando={cargando} />
-          </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {['prendas', 'inspos'].map(p => (
+          <button
+            key={p}
+            onClick={() => setPestana(p)}
+            style={{
+              padding: '8px 20px', borderRadius: 20,
+              border: pestana === p ? 'none' : `1px solid ${colors.border}`,
+              background: pestana === p ? colors.accent : 'transparent',
+              color: pestana === p ? '#fff' : colors.textMuted,
+              fontSize: '0.82rem', fontFamily: fonts.body,
+              cursor: 'pointer', textTransform: 'capitalize',
+              transition: 'all 0.2s',
+            }}
+          >{p}</button>
+        ))}
+      </div>
+        
+        {pestana === 'prendas' && (
+  <>
+    <div style={{ background: colors.white, borderRadius: 20, padding: 14, boxShadow: '0 0 50px rgba(50,100,255,0.12)', marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SlotPrenda prenda={get('top')} etiqueta="Top" onAnterior={() => cambiar('top', -1)} onSiguiente={() => cambiar('top', 1)} altura={150} cargando={cargando} />
+          <SlotPrenda prenda={get('pantalon')} etiqueta="Pantalón" onAnterior={() => cambiar('pantalon', -1)} onSiguiente={() => cambiar('pantalon', 1)} altura={190} cargando={cargando} />
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
-          {CATEGORIAS.map(cat => {
-            const p = get(cat)
-            return <span key={cat} style={{ fontSize: '0.72rem', fontFamily: fonts.body, background: '#eef2ff', color: colors.accentDim, padding: '3px 10px', borderRadius: 20 }}>{p ? p.nombre : ETIQUETAS[cat] + ' —'}</span>
-          })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SlotPrenda prenda={get('bolso')} etiqueta="Bolso" onAnterior={() => cambiar('bolso', -1)} onSiguiente={() => cambiar('bolso', 1)} altura={100} cargando={cargando} />
+          <SlotPrenda prenda={get('zapatos')} etiqueta="Zapatos" onAnterior={() => cambiar('zapatos', -1)} onSiguiente={() => cambiar('zapatos', 1)} altura={120} cargando={cargando} />
+          <SlotPrenda prenda={get('accesorio')} etiqueta="Accesorio" onAnterior={() => cambiar('accesorio', -1)} onSiguiente={() => cambiar('accesorio', 1)} altura={120} cargando={cargando} />
         </div>
       </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
+        {CATEGORIAS.map(cat => {
+          const p = get(cat)
+          return <span key={cat} style={{ fontSize: '0.72rem', fontFamily: fonts.body, background: '#eef2ff', color: colors.accentDim, padding: '3px 10px', borderRadius: 20 }}>{p ? p.nombre : ETIQUETAS[cat] + ' —'}</span>
+        })}
+      </div>
+    </div>
 
-      <button onClick={guardarPinta} style={{ width: '100%', padding: '14px', borderRadius: 50, border: guardado ? 'none' : `1.5px solid ${colors.border}`, background: guardado ? 'linear-gradient(135deg, #2a4abf, #5080ff)' : 'transparent', color: guardado ? '#fff' : colors.accentLight, fontSize: '0.95rem', fontFamily: fonts.body, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: '0.03em' }}>
-        {guardado ? '✓ Pinta guardada' : '✨ Guardar pinta'}
-      </button>
+    <button onClick={guardarPinta} style={{ width: '100%', padding: '14px', borderRadius: 50, border: guardado ? 'none' : `1.5px solid ${colors.border}`, background: guardado ? 'linear-gradient(135deg, #2a4abf, #5080ff)' : 'transparent', color: guardado ? '#fff' : colors.accentLight, fontSize: '0.95rem', fontFamily: fonts.body, cursor: 'pointer', transition: 'all 0.25s', letterSpacing: '0.03em' }}>
+      {guardado ? '✓ Pinta guardada' : '✨ Guardar pinta'}
+    </button>
+  </>
+)}
+{pestana === 'inspos' && <InsposTab />}
 
       {modalAgregar && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 20px 80px 20px' }}>
