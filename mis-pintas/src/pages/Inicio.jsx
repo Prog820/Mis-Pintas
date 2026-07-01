@@ -5,7 +5,7 @@ import './Inicio.css'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
-const Inicio = () => {
+const Inicio = ({ sesion }) => {
   const navigate = useNavigate()
   const [outfitHoy, setOutfitHoy] = useState(null)
   const [semana, setSemana] = useState([])
@@ -69,9 +69,11 @@ const Inicio = () => {
       <div className="inicio-topbar">
         <div>
           <p className="inicio-greeting-sub">✦ buenos días</p>
-          <h1 className="inicio-greeting-name">Mariana</h1>
+          <h1 className="inicio-greeting-name">{sesion?.user?.user_metadata?.nombre || sesion?.user?.email?.split('@')[0]}</h1>
         </div>
-        <div className="inicio-avatar">M</div>
+        <div className="inicio-avatar" onClick={() => navigate('/configuracion')} style={{ cursor: 'pointer' }}>
+          {sesion?.user?.user_metadata?.nombre?.[0]?.toUpperCase()}
+        </div>
       </div>
 
       {/* Card pinta de hoy */}
