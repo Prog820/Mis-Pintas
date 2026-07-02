@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
-
+import { quitarFondo } from '../lib/removebg'
+import { describirPrenda } from '../lib/gemini'
 
 const CATEGORIAS = ['top', 'pantalon', 'bolso', 'zapatos', 'accesorio']
 const ETIQUETAS = { top: 'Top', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
@@ -154,6 +155,8 @@ const Armario = () => {
   const [archivoModal, setArchivoModal] = useState(null)
   const [previewModal, setPreviewModal] = useState(null)
   const inputRef = useRef(null)
+  const [descripcionModal, setDescripcionModal] = useState('')
+  const [generandoDesc, setGenerandoDesc] = useState(false)
 
   useEffect(() => { cargarPrendas() }, [])
 
@@ -185,33 +188,49 @@ const Armario = () => {
     setCategoriaModal('top')
   }
 
-  const seleccionarArchivo = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    setArchivoModal(file)
-    setPreviewModal(URL.createObjectURL(file))
-    if (!nombreModal) setNombreModal(file.name.replace(/\.[^/.]+$/, ''))
+  const seleccionarArchivo = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  setArchivoModal(file)
+  setPreviewModal(URL.createObjectURL(file))
+  if (!nombreModal) setNombreModal(file.name.replace(/\.[^/.]+$/, ''))
+
+  // Generar descripción con Gemini
+  setGenerandoDesc(true)
+  try {
+    const desc = await describirPrenda(file)
+    setDescripcionModal(desc)
+  } catch (err) {
+    console.error('Error generando descripción:', err)
+    setDescripcionModal('')
   }
+  setGenerandoDesc(false)
+}
 
   async function subirPrenda() {
-    if (!archivoModal || !nombreModal) return
-    setSubiendo(true)
-    try {
-      const ext = archivoModal.name.split('.').pop()
-      const fileName = `${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoModal)
-      if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
-      const { error: insertError } = await supabase.from('prendas').insert({ categoria: categoriaModal, nombre: nombreModal, foto_url: urlData.publicUrl })
-      if (insertError) throw insertError
-      await cargarPrendas()
-      setModalAgregar(false)
-    } catch (err) {
-      console.error('Error subiendo prenda:', err)
-      alert('Hubo un error subiendo la prenda. Intenta de nuevo.')
-    }
-    setSubiendo(false)
+  if (!archivoModal || !nombreModal) return
+  setSubiendo(true)
+  try {
+    const archivoSinFondo = await quitarFondo(archivoModal)
+    const fileName = `${Date.now()}.png`
+    const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoSinFondo)
+    if (uploadError) throw uploadError
+    const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
+    const { error: insertError } = await supabase.from('prendas').insert({
+      categoria: categoriaModal,
+      nombre: nombreModal,
+      foto_url: urlData.publicUrl,
+      descripcion_ia: descripcionModal,
+    })
+    if (insertError) throw insertError
+    await cargarPrendas()
+    setModalAgregar(false)
+  } catch (err) {
+    console.error('Error subiendo prenda:', err)
+    alert('Hubo un error subiendo la prenda. Intenta de nuevo.')
   }
+  setSubiendo(false)
+}
 
   async function guardarPinta() {
     const { error } = await supabase.from('outfits').insert({
@@ -308,6 +327,27 @@ const Armario = () => {
             <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={seleccionarArchivo} />
 
             <input type="text" placeholder="Nombre de la prenda" value={nombreModal} onChange={e => setNombreModal(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.04)', color: colors.text, fontFamily: fonts.body, fontSize: '0.9rem', marginBottom: 12, outline: 'none' }} />
+
+            <div style={{ marginBottom: 12 }}>
+            <p style={{ fontSize: '0.72rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 6, letterSpacing: '0.05em' }}>
+              {generandoDesc ? '✦ Generando descripción...' : '✦ Descripción de la prenda (editable)'}
+            </p>
+            <textarea
+              value={descripcionModal}
+              onChange={e => setDescripcionModal(e.target.value)}
+              placeholder={generandoDesc ? 'La IA está analizando tu prenda...' : 'La descripción aparecerá aquí. Puedes editarla.'}
+              rows={4}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 10,
+                border: `1px solid ${colors.border}`,
+                background: 'rgba(255,255,255,0.04)', color: colors.text,
+                fontFamily: fonts.body, fontSize: '0.85rem',
+                outline: 'none', resize: 'vertical',
+                lineHeight: 1.5,
+                opacity: generandoDesc ? 0.5 : 1,
+              }}
+            />
+          </div>
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
               {CATEGORIAS.map(cat => (

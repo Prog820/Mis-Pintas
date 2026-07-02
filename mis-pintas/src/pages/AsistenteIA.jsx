@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
+import { sugerirOutfit } from '../lib/gemini'
 
 const ocasiones = ['casual', 'universidad', 'salida nocturna', 'formal', 'deporte', 'cita']
 
@@ -45,17 +46,43 @@ const AsistenteIA = () => {
     setResultado(null)
   }
 
-  const crearPinta = () => {
-    if (!inspoSeleccionada) { alert('Selecciona una foto de inspo primero'); return }
-    setCargando(true)
-    setResultado(null)
-    setTimeout(() => {
-      setCargando(false)
-      setResultado({
-        prendas: { top: '👗', pantalon: '🩱', bolso: '👛', zapatos: '👠', accesorio: '💍' },
-        explicacion: 'Basándome en tu inspo y la ocasión seleccionada, elegí un vestido elegante combinado con accesorios dorados. El bolso pequeño y los tacones complementan el look sin sobrecargarlo.',
-      })
-    }, 2000)
+  const crearPinta = async () => {
+  if (!inspoSeleccionada) { alert('Selecciona una foto de inspo primero'); return }
+  setCargando(true)
+  setResultado(null)
+
+  try {
+    // Cargar todas las prendas con descripción
+    const { data: prendas } = await supabase.from('prendas').select('*')
+
+    // Convertir foto de inspo a base64
+    const response = await fetch(inspoSeleccionada.foto_url)
+    const blob = await response.blob()
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result.split(',')[1])
+      reader.readAsDataURL(blob)
+    })
+
+    const sugerencia = await sugerirOutfit(prendas, base64, blob.type, ocasionesSeleccionadas)
+
+    // Buscar las prendas reales que coincidan con los nombres sugeridos
+    const encontrar = (cat) => prendas.find(p => p.categoria === cat && p.nombre === sugerencia[cat]) || prendas.find(p => p.categoria === cat)
+
+    setResultado({
+      top: encontrar('top'),
+      pantalon: encontrar('pantalon'),
+      bolso: encontrar('bolso'),
+      zapatos: encontrar('zapatos'),
+      accesorio: encontrar('accesorio'),
+      explicacion: sugerencia.explicacion,
+    })
+  } catch (err) {
+    console.error('Error creando pinta:', err)
+    alert('Hubo un error creando la pinta. Intenta de nuevo.')
+  }
+
+    setCargando(false)
   }
 
   const labelStyle = { fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 12 }
@@ -110,26 +137,36 @@ const AsistenteIA = () => {
       )}
 
       {resultado && (
-        <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 20, padding: 18 }}>
-          <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginBottom: 14, fontFamily: fonts.body }}>✦ tu pinta sugerida</p>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14, border: '1px solid #f0f0f0' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ background: '#f0f2f8', borderRadius: 10, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{resultado.prendas.top}</div>
-              <div style={{ background: '#f0f2f8', borderRadius: 10, height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{resultado.prendas.pantalon}</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>{resultado.prendas.bolso}</div>
-              <div style={{ background: '#f0f2f8', borderRadius: 10, height: 68, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>{resultado.prendas.zapatos}</div>
-              <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>{resultado.prendas.accesorio}</div>
-            </div>
-          </div>
-          <p style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.6, marginBottom: 14, fontFamily: fonts.body }}>{resultado.explicacion}</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#0a1540', color: colors.accentLight, fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Guardar pinta</button>
-            <button onClick={crearPinta} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #eef2ff', background: 'transparent', color: '#3a5abf', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Intentar de nuevo</button>
-          </div>
+  <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 20, padding: 18 }}>
+    <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginBottom: 14, fontFamily: fonts.body }}>✦ tu pinta sugerida</p>
+    <div style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14, border: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 90, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.top?.foto_url && <img src={resultado.top.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
         </div>
-      )}
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 110, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.pantalon?.foto_url && <img src={resultado.pantalon.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+        </div>
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 68, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.zapatos?.foto_url && <img src={resultado.zapatos.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+        </div>
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.accesorio?.foto_url && <img src={resultado.accesorio.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+        </div>
+      </div>
+    </div>
+    <p style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.6, marginBottom: 14, fontFamily: fonts.body }}>{resultado.explicacion}</p>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#0a1540', color: colors.accentLight, fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Guardar pinta</button>
+      <button onClick={crearPinta} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #eef2ff', background: 'transparent', color: '#3a5abf', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Intentar de nuevo</button>
+    </div>
+  </div>
+)}
     </div>
   )
 }
