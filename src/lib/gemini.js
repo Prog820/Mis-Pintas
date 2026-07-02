@@ -1,5 +1,5 @@
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
 
 // Convierte un archivo a base64
 async function archivoABase64(archivo) {
@@ -15,32 +15,47 @@ async function archivoABase64(archivo) {
 export async function describirPrenda(archivo) {
   const base64 = await archivoABase64(archivo)
 
-  const response = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          {
-            inline_data: {
-              mime_type: archivo.type,
-              data: base64,
+  for (let intento = 0; intento < 3; intento++) {
+    const response = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {
+              inline_data: {
+                mime_type: archivo.type,
+                data: base64,
+              }
+            },
+            {
+              text: `Describe esta prenda de ropa en detalle para usarla en un sistema de recomendación de outfits.
+Incluye: tipo de prenda, color exacto, material si se puede inferir, fit (ajustado/suelto/regular), largo, estilo (casual/formal/deportivo/etc), y cualquier detalle relevante como estampados, texturas, bordados o detalles especiales.
+Responde en español, en máximo 6 oraciones, de forma descriptiva y precisa. La respuesta tiene que ser extremadamente detallada, llegando a describir incluso los detalles más pequeños de la prenda. No incluyas opiniones ni sugerencias de uso, solo descripción objetiva.`
             }
-          },
-          {
-            text: `Describe esta prenda de ropa en detalle para usarla en un sistema de recomendación de outfits. 
-Incluye: tipo de prenda, color exacto, material si se puede inferir, fit (ajustado/suelto/regular), largo, estilo (casual/formal/deportivo/etc), y cualquier detalle relevante como estampados, texturas, bordados, o detalles especiales.
-Responde en español, en máximo 3 oraciones, de forma descriptiva y precisa.`
-          }
-        ]
-      }]
+          ]
+        }]
+      })
     })
-  })
 
-  if (!response.ok) throw new Error('Error describiendo la prenda')
+    if (!response.ok) {
+      const error = await response.text()
 
-  const data = await response.json()
-  return data.candidates[0].content.parts[0].text
+      if (response.status === 503 && intento < 2) {
+        console.log(`Gemini ocupado. Reintentando (${intento + 1}/3)...`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        continue
+      }
+
+      console.error("ERROR DE GEMINI:", error)
+      throw new Error(error)
+    }
+
+    const data = await response.json()
+    return data.candidates[0].content.parts[0].text
+  }
+
+  throw new Error("No se pudo obtener una respuesta de Gemini.")
 }
 
 // Sugiere un outfit basado en descripciones de prendas y una foto de inspo
