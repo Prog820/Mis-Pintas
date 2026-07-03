@@ -7,7 +7,7 @@ export async function quitarFondo(archivo) {
   const response = await fetch('https://api.remove.bg/v1.0/removebg', {
     method: 'POST',
     headers: {
-      'X-Api-Key': REMOVEBG_KEY,
+      'X-Api-Key':REMOVEBG_KEY,
     },
     body: formData,
   })
