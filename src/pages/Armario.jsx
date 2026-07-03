@@ -4,8 +4,8 @@ import { colors, fonts } from '../styles/global'
 import { quitarFondo } from '../lib/removebg'
 import { describirPrenda } from '../lib/gemini'
 
-const CATEGORIAS = ['top', 'pantalon', 'bolso', 'zapatos', 'accesorio']
-const ETIQUETAS = { top: 'Top', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
+const CATEGORIAS = ['top', 'chaqueta', 'pantalon', 'bolso', 'zapatos', 'accesorio']
+const ETIQUETAS = { top: 'Top', chaqueta: 'Chaqueta', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
 
 function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargando }) {
   const touchStart = useRef(null)
@@ -143,8 +143,8 @@ function InsposTab() {
 }
 
 const Armario = () => {
-  const [prendas, setPrendas] = useState({ top: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] })
-  const [indices, setIndices] = useState({ top: 0, pantalon: 0, bolso: 0, zapatos: 0, accesorio: 0 })
+  const [prendas, setPrendas] = useState({ top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] })
+  const [indices, setIndices] = useState({ top: 0, chaqueta: 0, pantalon: 0, bolso: 0, zapatos: 0, accesorio: 0 })
   const [cargando, setCargando] = useState(true)
   const [subiendo, setSubiendo] = useState(false)
   const [guardado, setGuardado] = useState(false)
@@ -164,7 +164,7 @@ const Armario = () => {
     setCargando(true)
     const { data, error } = await supabase.from('prendas').select('*').order('created_at', { ascending: true })
     if (!error) {
-      const agrupadas = { top: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
+      const agrupadas = { top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
       data.forEach(p => { if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p) })
       setPrendas(agrupadas)
     }
@@ -236,6 +236,7 @@ const Armario = () => {
     const { error } = await supabase.from('outfits').insert({
       nombre: 'Mi pinta',
       top_id: get('top')?.id || null,
+      chaqueta_id: get('chaqueta')?.id || null,
       pantalon_id: get('pantalon')?.id || null,
       bolso_id: get('bolso')?.id || null,
       zapatos_id: get('zapatos')?.id || null,
@@ -283,13 +284,61 @@ const Armario = () => {
     <div style={{ background: colors.white, borderRadius: 20, padding: 14, boxShadow: '0 0 50px rgba(50,100,255,0.12)', marginBottom: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <SlotPrenda prenda={get('top')} etiqueta="Top" onAnterior={() => cambiar('top', -1)} onSiguiente={() => cambiar('top', 1)} altura={150} cargando={cargando} />
-          <SlotPrenda prenda={get('pantalon')} etiqueta="Pantalón" onAnterior={() => cambiar('pantalon', -1)} onSiguiente={() => cambiar('pantalon', 1)} altura={190} cargando={cargando} />
+          <SlotPrenda
+            prenda={get('top')}
+            etiqueta="Top"
+            onAnterior={() => cambiar('top', -1)}
+            onSiguiente={() => cambiar('top', 1)}
+            altura={150}
+            cargando={cargando}
+          />
+
+          <SlotPrenda
+            prenda={get('pantalon')}
+            etiqueta="Pantalón"
+            onAnterior={() => cambiar('pantalon', -1)}
+            onSiguiente={() => cambiar('pantalon', 1)}
+            altura={190}
+            cargando={cargando}
+          />
+
+          <SlotPrenda
+            prenda={get('zapatos')}
+            etiqueta="Zapatos"
+            onAnterior={() => cambiar('zapatos', -1)}
+            onSiguiente={() => cambiar('zapatos', 1)}
+            altura={110}
+            cargando={cargando}
+          />
         </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <SlotPrenda prenda={get('bolso')} etiqueta="Bolso" onAnterior={() => cambiar('bolso', -1)} onSiguiente={() => cambiar('bolso', 1)} altura={100} cargando={cargando} />
-          <SlotPrenda prenda={get('zapatos')} etiqueta="Zapatos" onAnterior={() => cambiar('zapatos', -1)} onSiguiente={() => cambiar('zapatos', 1)} altura={120} cargando={cargando} />
-          <SlotPrenda prenda={get('accesorio')} etiqueta="Accesorio" onAnterior={() => cambiar('accesorio', -1)} onSiguiente={() => cambiar('accesorio', 1)} altura={120} cargando={cargando} />
+          <SlotPrenda
+            prenda={get('chaqueta')}
+            etiqueta="Chaqueta"
+            onAnterior={() => cambiar('chaqueta', -1)}
+            onSiguiente={() => cambiar('chaqueta', 1)}
+            altura={120}
+            cargando={cargando}
+          />
+
+          <SlotPrenda
+            prenda={get('bolso')}
+            etiqueta="Bolso"
+            onAnterior={() => cambiar('bolso', -1)}
+            onSiguiente={() => cambiar('bolso', 1)}
+            altura={90}
+            cargando={cargando}
+          />
+
+          <SlotPrenda
+            prenda={get('accesorio')}
+            etiqueta="Accesorio"
+            onAnterior={() => cambiar('accesorio', -1)}
+            onSiguiente={() => cambiar('accesorio', 1)}
+            altura={110}
+            cargando={cargando}
+          />
         </div>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>

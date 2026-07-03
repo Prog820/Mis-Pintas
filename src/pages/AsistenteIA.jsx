@@ -67,10 +67,23 @@ const AsistenteIA = () => {
     const sugerencia = await sugerirOutfit(prendas, base64, blob.type, ocasionesSeleccionadas)
 
     // Buscar las prendas reales que coincidan con los nombres sugeridos
-    const encontrar = (cat) => prendas.find(p => p.categoria === cat && p.nombre === sugerencia[cat]) || prendas.find(p => p.categoria === cat)
+    const encontrar = (cat) => {
+      if (sugerencia[cat] === 'ninguna') return null
+
+      return (
+        prendas.find(
+          p =>
+            p.categoria === cat &&
+            p.nombre === sugerencia[cat]
+        ) ||
+        prendas.find(p => p.categoria === cat) ||
+        null
+      )
+    }
 
     setResultado({
       top: encontrar('top'),
+      chaqueta: encontrar('chaqueta'),
       pantalon: encontrar('pantalon'),
       bolso: encontrar('bolso'),
       zapatos: encontrar('zapatos'),
@@ -142,18 +155,36 @@ const AsistenteIA = () => {
     <div style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14, border: '1px solid #f0f0f0' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ background: '#f0f2f8', borderRadius: 10, height: 90, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.top?.foto_url && <img src={resultado.top.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          {resultado.top?.foto_url && (
+            <img
+              src={resultado.top.foto_url}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          )}
         </div>
         <div style={{ background: '#f0f2f8', borderRadius: 10, height: 110, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.pantalon?.foto_url && <img src={resultado.pantalon.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          {resultado.pantalon?.foto_url && (
+            <img
+              src={resultado.pantalon.foto_url}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          )}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-        </div>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 68, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.chaqueta?.foto_url && (
+            <img
+              src={resultado.chaqueta.foto_url}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          )}
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 68, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {resultado.zapatos?.foto_url && <img src={resultado.zapatos.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+        </div>
+        </div>
+        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
         </div>
         <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {resultado.accesorio?.foto_url && <img src={resultado.accesorio.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}

@@ -23,11 +23,13 @@ function CollageMini({ prendas }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <Slot prenda={prendas?.top} height={70} />
         <Slot prenda={prendas?.pantalon} height={85} />
+        <Slot prenda={prendas?.zapatos} height={42} />
       </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.bolso} height={50} />
-        <Slot prenda={prendas?.zapatos} height={50} />
-        <Slot prenda={prendas?.accesorio} height={50} />
+        <Slot prenda={prendas?.chaqueta} height={50} />
+        <Slot prenda={prendas?.bolso} height={42} />
+        <Slot prenda={prendas?.accesorio} height={42} />
       </div>
     </div>
   )
@@ -52,12 +54,12 @@ const Calendario = () => {
 
     const { data: calData } = await supabase
       .from('calendario')
-      .select(`*, outfit:outfit_id(*, top:top_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*))`)
+      .select(`*, outfit:outfit_id(*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*))`)
       .gte('fecha', primerDia).lte('fecha', ultimoDia)
 
     const { data: pintasData } = await supabase
       .from('outfits')
-      .select(`*, top:top_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
+      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
       .order('created_at', { ascending: false })
 
     if (calData) {

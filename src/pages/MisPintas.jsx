@@ -18,11 +18,13 @@ function CollageMini({ prendas }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <Slot prenda={prendas?.top} height={64} />
         <Slot prenda={prendas?.pantalon} height={80} />
+        <Slot prenda={prendas?.zapatos} height={42} />
       </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.bolso} height={48} />
-        <Slot prenda={prendas?.zapatos} height={48} />
-        <Slot prenda={prendas?.accesorio} height={48} />
+        <Slot prenda={prendas?.chaqueta} height={48} />
+        <Slot prenda={prendas?.bolso} height={42} />
+        <Slot prenda={prendas?.accesorio} height={42} />
       </div>
     </div>
   )
@@ -39,7 +41,7 @@ const MisPintas = () => {
     setCargando(true)
     const { data, error } = await supabase
       .from('outfits')
-      .select(`*, top:top_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
+      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
       .order('created_at', { ascending: false })
     if (!error) setPintas(data)
     setCargando(false)

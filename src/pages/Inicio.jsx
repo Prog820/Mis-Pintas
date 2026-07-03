@@ -39,6 +39,7 @@ const Inicio = ({ sesion }) => {
         outfit:outfit_id(
           *,
           top:top_id(*),
+          chaqueta:chaqueta_id(*),
           pantalon:pantalon_id(*),
           bolso:bolso_id(*),
           zapatos:zapatos_id(*),
@@ -91,6 +92,7 @@ const Inicio = ({ sesion }) => {
           <div className="today-outfit">
             {[
               { prenda: outfitHoy.bolso, label: 'bolso', cls: 'sm' },
+              { prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' },
               { prenda: outfitHoy.top, label: 'camisa', cls: 'tall' },
               { prenda: outfitHoy.pantalon, label: 'pantalón', cls: 'tall' },
               { prenda: outfitHoy.zapatos, label: 'zapatos', cls: 'md' },
