@@ -157,6 +157,7 @@ const Armario = () => {
   const inputRef = useRef(null)
   const [descripcionModal, setDescripcionModal] = useState('')
   const [generandoDesc, setGenerandoDesc] = useState(false)
+  const [quitarFondoAuto, setQuitarFondoAuto] = useState(true)
 
   useEffect(() => { cargarPrendas() }, [])
 
@@ -186,6 +187,7 @@ const Armario = () => {
     setArchivoModal(null)
     setPreviewModal(null)
     setCategoriaModal('top')
+    setQuitarFondoAuto(true)
   }
 
   const seleccionarArchivo = async (e) => {
@@ -211,9 +213,17 @@ const Armario = () => {
   if (!archivoModal || !nombreModal) return
   setSubiendo(true)
   try {
-    const archivoSinFondo = await quitarFondo(archivoModal)
+    let archivoFinal = archivoModal
+
+      if (quitarFondoAuto) {
+        try {
+          archivoFinal = await quitarFondo(archivoModal)
+        } catch (err) {
+          console.warn('No fue posible quitar el fondo. Se subirá la imagen original.')
+        }
+      }
     const fileName = `${Date.now()}.png`
-    const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoSinFondo)
+    const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoFinal)
     if (uploadError) throw uploadError
     const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
     const { error: insertError } = await supabase.from('prendas').insert({
@@ -376,6 +386,73 @@ const Armario = () => {
             <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={seleccionarArchivo} />
 
             <input type="text" placeholder="Nombre de la prenda" value={nombreModal} onChange={e => setNombreModal(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.04)', color: colors.text, fontFamily: fonts.body, fontSize: '0.9rem', marginBottom: 12, outline: 'none' }} />
+
+                        <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 18,
+                padding: '12px 14px',
+                border: `1px solid ${colors.border}`,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.03)',
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    color: colors.textSoft,
+                    fontFamily: fonts.body,
+                    fontSize: '0.84rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  Fondo transparente.
+                </p>
+
+                <p
+                  style={{
+                    margin: '3px 0 0',
+                    color: colors.textMuted,
+                    fontFamily: fonts.body,
+                    fontSize: '0.72rem',
+                  }}
+                >
+                  Mejora el resultado usando un crédito.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQuitarFondoAuto(!quitarFondoAuto)}
+                style={{
+                  width: 48,
+                  height: 28,
+                  borderRadius: 999,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: quitarFondoAuto ? colors.accent : '#2a3147',
+                  position: 'relative',
+                  transition: '0.25s',
+                  padding: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    position: 'absolute',
+                    top: 3,
+                    left: quitarFondoAuto ? 23 : 3,
+                    transition: '0.25s',
+                  }}
+                />
+              </button>
+            </div>
 
             <div style={{ marginBottom: 12 }}>
             <p style={{ fontSize: '0.72rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 6, letterSpacing: '0.05em' }}>
