@@ -154,42 +154,30 @@ const AsistenteIA = () => {
     <p style={{ fontSize: '0.72rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginBottom: 14, fontFamily: fonts.body }}>✦ tu pinta sugerida</p>
     <div style={{ background: '#fff', borderRadius: 12, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 14, border: '1px solid #f0f0f0' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 90, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.top?.foto_url && (
-            <img
-              src={resultado.top.foto_url}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          )}
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 90, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {resultado.top?.foto_url && <img src={resultado.top.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 110, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {resultado.pantalon?.foto_url && <img src={resultado.pantalon.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {resultado.zapatos?.foto_url && <img src={resultado.zapatos.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
         </div>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 110, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.pantalon?.foto_url && (
-            <img
-              src={resultado.pantalon.foto_url}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          )}
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {resultado.chaqueta?.foto_url && (
-            <img
-              src={resultado.chaqueta.foto_url}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
+            <div style={{ background: '#f0f2f8', borderRadius: 10, height: 70, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={resultado.chaqueta.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
           )}
-          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 68, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.zapatos?.foto_url && <img src={resultado.zapatos.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
+          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {resultado.accesorio?.foto_url && <img src={resultado.accesorio.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+          </div>
         </div>
-        </div>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-        </div>
-        <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {resultado.accesorio?.foto_url && <img src={resultado.accesorio.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-        </div>
-      </div>
     </div>
     <p style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.6, marginBottom: 14, fontFamily: fonts.body }}>{resultado.explicacion}</p>
     <div style={{ display: 'flex', gap: 8 }}>

@@ -61,6 +61,13 @@ function InsposTab() {
   const [subiendo, setSubiendo] = useState(false)
   const [confirmarEliminar, setConfirmarEliminar] = useState(null)
   const inputRef = useRef(null)
+  const [cols, setCols] = useState(window.innerWidth >= 768 ? 3 : 2)
+
+  useEffect(() => {
+    const handleResize = () => setCols(window.innerWidth >= 768 ? 3 : 2)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => { cargarInspos() }, [])
 
@@ -115,7 +122,7 @@ function InsposTab() {
           <button onClick={() => inputRef.current?.click()} style={{ padding: '10px 24px', borderRadius: 50, border: `1.5px solid ${colors.border}`, background: 'transparent', color: colors.accentLight, fontFamily: fonts.body, fontSize: '0.85rem', cursor: 'pointer' }}>Agregar primera inspo</button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10 }}>
           {inspos.map(inspo => (
             <div key={inspo.id} style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', aspectRatio: '3/4' }}>
               <img src={inspo.foto_url} alt="inspo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -158,6 +165,7 @@ const Armario = () => {
   const [descripcionModal, setDescripcionModal] = useState('')
   const [generandoDesc, setGenerandoDesc] = useState(false)
   const [quitarFondoAuto, setQuitarFondoAuto] = useState(true)
+  const [conChaqueta, setConChaqueta] = useState(false)
 
   useEffect(() => { cargarPrendas() }, [])
 
@@ -246,7 +254,7 @@ const Armario = () => {
     const { error } = await supabase.from('outfits').insert({
       nombre: 'Mi pinta',
       top_id: get('top')?.id || null,
-      chaqueta_id: get('chaqueta')?.id || null,
+      chaqueta_id: conChaqueta ? get('chaqueta')?.id || null : null,
       pantalon_id: get('pantalon')?.id || null,
       bolso_id: get('bolso')?.id || null,
       zapatos_id: get('zapatos')?.id || null,
@@ -288,6 +296,32 @@ const Armario = () => {
           >{p}</button>
         ))}
       </div>
+
+      {pestana === 'prendas' && (
+        <button
+          onClick={() => setConChaqueta(p => !p)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'none', border: 'none', cursor: 'pointer',
+            marginBottom: 16, padding: 0,
+          }}
+        >
+          <div style={{
+            width: 36, height: 20, borderRadius: 999,
+            background: conChaqueta ? colors.accent : '#2a3147',
+            position: 'relative', transition: '0.25s', flexShrink: 0,
+          }}>
+            <div style={{
+              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+              position: 'absolute', top: 2,
+              left: conChaqueta ? 18 : 2, transition: '0.25s',
+            }} />
+          </div>
+          <span style={{ fontSize: '0.8rem', color: colors.textMuted, fontFamily: fonts.body }}>
+            Agregar chaqueta
+          </span>
+        </button>
+      )}
         
         {pestana === 'prendas' && (
   <>
@@ -323,14 +357,16 @@ const Armario = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <SlotPrenda
-            prenda={get('chaqueta')}
-            etiqueta="Chaqueta"
-            onAnterior={() => cambiar('chaqueta', -1)}
-            onSiguiente={() => cambiar('chaqueta', 1)}
-            altura={120}
-            cargando={cargando}
-          />
+          {conChaqueta && (
+            <SlotPrenda
+              prenda={get('chaqueta')}
+              etiqueta="Chaqueta"
+              onAnterior={() => cambiar('chaqueta', -1)}
+              onSiguiente={() => cambiar('chaqueta', 1)}
+              altura={190}
+              cargando={cargando}
+            />
+          )}
 
           <SlotPrenda
             prenda={get('bolso')}

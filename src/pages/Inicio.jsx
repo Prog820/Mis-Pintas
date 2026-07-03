@@ -92,7 +92,7 @@ const Inicio = ({ sesion }) => {
           <div className="today-outfit">
             {[
               { prenda: outfitHoy.bolso, label: 'bolso', cls: 'sm' },
-              { prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' },
+              { prenda: (outfitHoy.chaqueta ? [{ prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' }] : [])},
               { prenda: outfitHoy.top, label: 'camisa', cls: 'tall' },
               { prenda: outfitHoy.pantalon, label: 'pantalón', cls: 'tall' },
               { prenda: outfitHoy.zapatos, label: 'zapatos', cls: 'md' },
