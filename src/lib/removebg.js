@@ -13,8 +13,10 @@ export async function quitarFondo(archivo) {
   })
 
   if (!response.ok) {
-    throw new Error('Error quitando el fondo')
-  }
+  const error = await response.text()
+  console.error(error)
+  throw new Error(error)
+}
 
   const blob = await response.blob()
   return new File([blob], 'prenda_sin_fondo.png', { type: 'image/png' })
