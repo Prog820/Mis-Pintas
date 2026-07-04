@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
 import { quitarFondo } from '../lib/removebg'
 import { describirPrenda } from '../lib/gemini'
+import heic2any from 'heic2any'
 
 const CATEGORIAS = ['top', 'chaqueta', 'pantalon', 'bolso', 'zapatos', 'accesorio']
 const ETIQUETAS = { top: 'Top', chaqueta: 'Chaqueta', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
@@ -201,14 +202,26 @@ const Armario = () => {
   const seleccionarArchivo = async (e) => {
   const file = e.target.files[0]
   if (!file) return
-  setArchivoModal(file)
-  setPreviewModal(URL.createObjectURL(file))
+
+  let archivoFinal = file
+
+  // Convertir HEIC/HEIF a JPG
+  if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+    try {
+      const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
+      archivoFinal = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
+    } catch (err) {
+      console.error('Error convirtiendo HEIC:', err)
+    }
+  }
+
+  setArchivoModal(archivoFinal)
+  setPreviewModal(URL.createObjectURL(archivoFinal))
   if (!nombreModal) setNombreModal(file.name.replace(/\.[^/.]+$/, ''))
 
-  // Generar descripción con Gemini
   setGenerandoDesc(true)
   try {
-    const desc = await describirPrenda(file)
+    const desc = await describirPrenda(archivoFinal)
     setDescripcionModal(desc)
   } catch (err) {
     console.error('Error generando descripción:', err)
