@@ -20,8 +20,21 @@ const Register = () => {
       email, password,
       options: { data: { nombre } }
     })
-    if (error) setError('Error al registrarse. Intenta de nuevo.')
-    else navigate('/')
+    if (error) {
+      setError('Error al registrarse. Intenta de nuevo.')
+    } else {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) navigate('/')
+      else {
+        // Esperar a que la sesión se establezca
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            subscription.unsubscribe()
+            navigate('/')
+          }
+        })
+      }
+    }
     setCargando(false)
   }
 

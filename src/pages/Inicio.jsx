@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import './Inicio.css'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { colors, fonts } from '../styles/global'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
@@ -10,6 +11,17 @@ const Inicio = ({ sesion }) => {
   const [outfitHoy, setOutfitHoy] = useState(null)
   const [semana, setSemana] = useState([])
   const [cargando, setCargando] = useState(true)
+
+  const location = useLocation()
+  const [mostrarBienvenida, setMostrarBienvenida] = useState(location.state?.bienvenida || false)
+  const nombreBienvenida = location.state?.nombre || ''
+
+  useEffect(() => {
+    if (mostrarBienvenida) {
+      const t = setTimeout(() => setMostrarBienvenida(false), 3500)
+      return () => clearTimeout(t)
+    }
+  }, [mostrarBienvenida])
 
   const hoy = new Date()
   const fechaHoy = hoy.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -69,13 +81,34 @@ const Inicio = ({ sesion }) => {
       {/* Topbar */}
       <div className="inicio-topbar">
         <div>
-          <p className="inicio-greeting-sub">✦ buenos días</p>
+          <p className="inicio-greeting-sub">✦ ¡Hola!</p>
           <h1 className="inicio-greeting-name">{sesion?.user?.user_metadata?.nombre || sesion?.user?.email?.split('@')[0]}</h1>
         </div>
         <div className="inicio-avatar" onClick={() => navigate('/configuracion')} style={{ cursor: 'pointer' }}>
           {sesion?.user?.user_metadata?.nombre?.[0]?.toUpperCase()}
         </div>
       </div>
+
+      {mostrarBienvenida && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 300,
+          background: 'rgba(6,8,16,0.92)', backdropFilter: 'blur(12px)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeOut 3.5s forwards',
+        }}>
+          <p style={{ fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 12 }}>✦ bienvenida</p>
+          <h1 style={{ fontFamily: fonts.title, fontSize: '2.5rem', color: colors.textSoft, fontWeight: 700, marginBottom: 8 }}>{nombreBienvenida}</h1>
+          <p style={{ fontSize: '0.9rem', color: colors.textMuted, fontFamily: fonts.body }}>Tu armario virtual te espera</p>
+          <style>{`
+            @keyframes fadeOut {
+              0% { opacity: 1 }
+              70% { opacity: 1 }
+              100% { opacity: 0; pointer-events: none }
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* Card pinta de hoy */}
       <div className="inicio-today-card">
@@ -92,7 +125,7 @@ const Inicio = ({ sesion }) => {
           <div className="today-outfit">
             {[
               { prenda: outfitHoy.bolso, label: 'bolso', cls: 'sm' },
-              { prenda: (outfitHoy.chaqueta ? [{ prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' }] : [])},
+              ...(outfitHoy.chaqueta ? [{ prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' }] : []),
               { prenda: outfitHoy.top, label: 'camisa', cls: 'tall' },
               { prenda: outfitHoy.pantalon, label: 'pantalón', cls: 'tall' },
               { prenda: outfitHoy.zapatos, label: 'zapatos', cls: 'md' },

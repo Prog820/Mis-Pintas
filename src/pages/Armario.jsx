@@ -234,11 +234,13 @@ const Armario = () => {
     const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoFinal)
     if (uploadError) throw uploadError
     const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
+    const { data: { user } } = await supabase.auth.getUser()
     const { error: insertError } = await supabase.from('prendas').insert({
       categoria: categoriaModal,
       nombre: nombreModal,
       foto_url: urlData.publicUrl,
       descripcion_ia: descripcionModal,
+      user_id: user.id,
     })
     if (insertError) throw insertError
     await cargarPrendas()
@@ -251,7 +253,9 @@ const Armario = () => {
 }
 
   async function guardarPinta() {
+    const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('outfits').insert({
+      user_id: user.id,
       nombre: 'Mi pinta',
       top_id: get('top')?.id || null,
       chaqueta_id: conChaqueta ? get('chaqueta')?.id || null : null,

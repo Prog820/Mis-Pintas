@@ -31,7 +31,8 @@ const AsistenteIA = () => {
       const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, file)
       if (uploadError) throw uploadError
       const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
-      const { error: insertError } = await supabase.from('inspos').insert({ foto_url: urlData.publicUrl })
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error: insertError } = await supabase.from('inspos').insert({ foto_url: urlData.publicUrl, user_id: user.id })
       if (insertError) throw insertError
       await cargarInspos()
     } catch (err) {

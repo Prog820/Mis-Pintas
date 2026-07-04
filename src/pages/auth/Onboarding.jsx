@@ -16,7 +16,7 @@ const Onboarding = () => {
       data: { nombre: nombre.trim() }
     })
     if (error) setError('Error guardando tu nombre. Intenta de nuevo.')
-    else navigate('/')
+    else navigate('/', { state: { bienvenida: true, nombre: nombre.trim() } })
     setCargando(false)
   }
 

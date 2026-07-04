@@ -77,7 +77,8 @@ const Calendario = () => {
     if (existente) {
       await supabase.from('calendario').update({ outfit_id: outfitId }).eq('id', existente.id)
     } else {
-      await supabase.from('calendario').insert({ fecha, outfit_id: outfitId })
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('calendario').insert({ fecha, outfit_id: outfitId, user_id: user.id })
     }
     setModalElegir(false)
     await cargarDatos()
