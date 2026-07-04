@@ -8,6 +8,29 @@ import heic2any from 'heic2any'
 const CATEGORIAS = ['top', 'chaqueta', 'pantalon', 'bolso', 'zapatos', 'accesorio']
 const ETIQUETAS = { top: 'Top', chaqueta: 'Chaqueta', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
 
+async function convertirAJpg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(url)
+        if (!blob) return reject(new Error('No se pudo convertir la imagen'))
+        resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.jpg', { type: 'image/jpeg' }))
+      }, 'image/jpeg', 0.9)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Formato no soportado'))
+    }
+    img.src = url
+  })
+}
+
 function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargando, onEliminar }) {
   const touchStart = useRef(null)
 
@@ -23,16 +46,6 @@ function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargand
     }
     touchStart.current = null
   }
-
-  async function eliminarPrenda() {
-  const prenda = prendaAEliminar
-  if (!prenda) return
-  const fileName = prenda.foto_url.split('/').pop()
-  await supabase.storage.from('prendas').remove([fileName])
-  await supabase.from('prendas').delete().eq('id', prenda.id)
-  setPrendaAEliminar(null)
-  await cargarPrendas()
-}
 
   return (
     <div
@@ -60,7 +73,7 @@ function SlotPrenda({ prenda, etiqueta, onAnterior, onSiguiente, altura, cargand
         )}
 
         {prenda && onEliminar && (
-          <button onClick={onEliminar} style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(255,60,60,0.7)', color: '#fff', fontSize: '0.65rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>✕</button>
+          <button onClick={onEliminar} style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(20,20,30,0.45)', color: '#fff', fontSize: '0.65rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>✕</button>
         )}
       </div>
 
@@ -196,6 +209,15 @@ const Armario = () => {
     setCargando(false)
   }
 
+  async function eliminarPrenda() {
+    if (!prendaAEliminar) return
+    const fileName = prendaAEliminar.foto_url.split('/').pop()
+    await supabase.storage.from('prendas').remove([fileName])
+    await supabase.from('prendas').delete().eq('id', prendaAEliminar.id)
+    setPrendaAEliminar(null)
+    await cargarPrendas()
+  }
+
   const cambiar = (cat, dir) => {
     const lista = prendas[cat]
     if (lista.length === 0) return
@@ -230,6 +252,18 @@ const Armario = () => {
     }
   }
 
+  // Si el formato no es uno de los seguros para navegador, convertir a JPG
+  const formatosSeguro = ['image/jpeg', 'image/png', 'image/webp']
+  if (!formatosSeguro.includes(archivoFinal.type)) {
+    try {
+      archivoFinal = await convertirAJpg(archivoFinal)
+    } catch (err) {
+      console.error('Formato de imagen no soportado:', err)
+      alert('Esta foto tiene un formato que tu navegador no puede abrir. Intenta con otra foto o toma una captura de pantalla de ella y sube eso.')
+      return
+    }
+  }
+
   setArchivoModal(archivoFinal)
   setPreviewModal(URL.createObjectURL(archivoFinal))
   if (!nombreModal) setNombreModal(file.name.replace(/\.[^/.]+$/, ''))
@@ -258,8 +292,10 @@ const Armario = () => {
           console.warn('No fue posible quitar el fondo. Se subirá la imagen original.')
         }
       }
-    const fileName = `${Date.now()}.png`
-    const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoFinal)
+    const tipoFinal = archivoFinal.type || 'image/jpeg'
+    const extension = tipoFinal === 'image/png' ? 'png' : tipoFinal === 'image/webp' ? 'webp' : 'jpg'
+    const fileName = `${Date.now()}.${extension}`
+    const { error: uploadError } = await supabase.storage.from('prendas').upload(fileName, archivoFinal, { contentType: tipoFinal })
     if (uploadError) throw uploadError
     const { data: urlData } = supabase.storage.from('prendas').getPublicUrl(fileName)
     const { data: { user } } = await supabase.auth.getUser()
@@ -547,20 +583,6 @@ const Armario = () => {
                 opacity: generandoDesc ? 0.5 : 1,
               }}
             />
-
-            {prendaAEliminar && (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}>
-                <img src={prendaAEliminar.foto_url} alt="prenda" style={{ width: 100, height: 100, objectFit: 'contain', borderRadius: 12, marginBottom: 16 }} />
-                <p style={{ fontSize: '0.9rem', color: colors.textSoft, fontFamily: fonts.body, marginBottom: 6, fontWeight: 500 }}>¿Eliminar {prendaAEliminar.nombre}?</p>
-                <p style={{ fontSize: '0.78rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 20 }}>Se borrará de tu armario. No se puede deshacer.</p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setPrendaAEliminar(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Cancelar</button>
-                  <button onClick={eliminarPrenda} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(255,80,80,0.7)', color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Eliminar</button>
-                </div>
-              </div>
-            </div>
-          )}
           </div>
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -572,6 +594,19 @@ const Armario = () => {
             <button onClick={subirPrenda} disabled={subiendo || !archivoModal || !nombreModal} style={{ width: '100%', padding: '14px', borderRadius: 50, border: 'none', background: subiendo || !archivoModal || !nombreModal ? 'rgba(80,128,255,0.3)' : 'linear-gradient(135deg, #2a4abf, #5080ff)', color: '#fff', fontSize: '0.95rem', fontFamily: fonts.body, cursor: subiendo ? 'not-allowed' : 'pointer' }}>
               {subiendo ? 'Subiendo...' : 'Guardar prenda'}
             </button>
+          </div>
+        </div>
+      )}
+      {prendaAEliminar && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}>
+            <img src={prendaAEliminar.foto_url} alt="prenda" style={{ width: 100, height: 100, objectFit: 'contain', borderRadius: 12, marginBottom: 16 }} />
+            <p style={{ fontSize: '0.9rem', color: colors.textSoft, fontFamily: fonts.body, marginBottom: 6, fontWeight: 500 }}>¿Eliminar {prendaAEliminar.nombre}?</p>
+            <p style={{ fontSize: '0.78rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 20 }}>Se borrará de tu armario. No se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setPrendaAEliminar(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={eliminarPrenda} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(255,80,80,0.7)', color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Eliminar</button>
+            </div>
           </div>
         </div>
       )}

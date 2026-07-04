@@ -6,6 +6,13 @@ import { colors, fonts } from '../styles/global'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
+function formatearFecha(fecha) {
+  const year = fecha.getFullYear()
+  const month = String(fecha.getMonth() + 1).padStart(2, '0')
+  const day = String(fecha.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const Inicio = ({ sesion }) => {
   const navigate = useNavigate()
   const [outfitHoy, setOutfitHoy] = useState(null)
@@ -41,7 +48,7 @@ const Inicio = ({ sesion }) => {
     const fechasSemana = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lunes)
       d.setDate(lunes.getDate() + i)
-      return d.toISOString().split('T')[0]
+      return formatearFecha(d)
     })
 
     const { data } = await supabase
@@ -63,7 +70,7 @@ const Inicio = ({ sesion }) => {
     const mapa = {}
     if (data) data.forEach(e => { mapa[e.fecha] = e.outfit })
 
-    const fechaHoyKey = hoy.toISOString().split('T')[0]
+    const fechaHoyKey = formatearFecha(hoy)
     setOutfitHoy(mapa[fechaHoyKey] || null)
 
     setSemana(fechasSemana.map((fecha, i) => ({
