@@ -3,6 +3,15 @@ import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
 
 const filtros = ['todas', 'favoritas', 'casual', 'universidad', 'salida nocturna', 'formal', 'deporte', 'cita']
+const categoriasOutfit = ['casual', 'universidad', 'salida nocturna', 'formal', 'deporte', 'cita']
+const slotsPrenda = [
+  { key: 'top', label: 'top' },
+  { key: 'chaqueta', label: 'chaqueta' },
+  { key: 'pantalon', label: 'pantalón' },
+  { key: 'zapatos', label: 'zapatos' },
+  { key: 'bolso', label: 'bolso' },
+  { key: 'accesorio', label: 'accesorio' },
+]
 
 function CollageMini({ prendas }) {
   const Slot = ({ prenda, height }) => (
@@ -35,8 +44,23 @@ const MisPintas = () => {
   const [pintas, setPintas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [pintaAEliminar, setPintaAEliminar] = useState(null)
+  const [pintaEditando, setPintaEditando] = useState(null)
+  const [prendasDisponibles, setPrendasDisponibles] = useState({})
+  const [nombreEdit, setNombreEdit] = useState('')
+  const [categoriaEdit, setCategoriaEdit] = useState('casual')
+  const [seleccionEdit, setSeleccionEdit] = useState({})
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false)
 
-  useEffect(() => { cargarPintas() }, [])
+  useEffect(() => { cargarPintas(); cargarPrendasDisponibles() }, [])
+
+  async function cargarPrendasDisponibles() {
+    const { data, error } = await supabase.from('prendas').select('*').order('created_at', { ascending: true })
+    if (!error) {
+      const agrupadas = { top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
+      data.forEach(p => { if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p) })
+      setPrendasDisponibles(agrupadas)
+    }
+  }
 
   async function cargarPintas() {
     setCargando(true)
@@ -58,6 +82,40 @@ const MisPintas = () => {
     await supabase.from('outfits').delete().eq('id', pintaAEliminar.id)
     setPintas(prev => prev.filter(p => p.id !== pintaAEliminar.id))
     setPintaAEliminar(null)
+  }
+
+  function abrirEditar(pinta) {
+    setPintaEditando(pinta)
+    setNombreEdit(pinta.nombre)
+    setCategoriaEdit(pinta.categoria)
+    setSeleccionEdit({
+      top: pinta.top, chaqueta: pinta.chaqueta, pantalon: pinta.pantalon,
+      zapatos: pinta.zapatos, bolso: pinta.bolso, accesorio: pinta.accesorio,
+    })
+  }
+
+  async function guardarEdicion() {
+    if (!nombreEdit.trim()) { alert('Ponle un nombre a tu pinta'); return }
+    setGuardandoEdicion(true)
+    try {
+      const { error } = await supabase.from('outfits').update({
+        nombre: nombreEdit.trim(),
+        categoria: categoriaEdit,
+        top_id: seleccionEdit.top?.id || null,
+        chaqueta_id: seleccionEdit.chaqueta?.id || null,
+        pantalon_id: seleccionEdit.pantalon?.id || null,
+        zapatos_id: seleccionEdit.zapatos?.id || null,
+        bolso_id: seleccionEdit.bolso?.id || null,
+        accesorio_id: seleccionEdit.accesorio?.id || null,
+      }).eq('id', pintaEditando.id)
+      if (error) throw error
+      setPintaEditando(null)
+      await cargarPintas()
+    } catch (err) {
+      console.error('Error editando pinta:', err)
+      alert('Hubo un error guardando los cambios. Intenta de nuevo.')
+    }
+    setGuardandoEdicion(false)
   }
 
   const pintasFiltradas = pintas.filter(p => {
@@ -91,10 +149,12 @@ const MisPintas = () => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {pintasFiltradas.map(pinta => (
-            <div key={pinta.id} style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 12, cursor: 'pointer', position: 'relative' }}>
+            <div key={pinta.id} onClick={() => abrirEditar(pinta)} style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 12, cursor: 'pointer', position: 'relative' }}>
               <button onClick={(e) => { e.stopPropagation(); setPintaAEliminar(pinta) }} style={{ position: 'absolute', top: 10, left: 10, width: 22, height: 22, borderRadius: '50%', background: 'rgba(20,20,30,0.45)', border: 'none', color: '#fff', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>✕</button>
-              <button onClick={() => toggleFavorita(pinta.id, pinta.es_favorita)} style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', opacity: pinta.es_favorita ? 1 : 0.35, transition: 'opacity 0.2s' }}>
-                {pinta.es_favorita ? '❤️' : '🤍'}
+              <button onClick={(e) => { e.stopPropagation(); toggleFavorita(pinta.id, pinta.es_favorita) }} style={{ position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: '50%', background: 'rgba(20,20,30,0.45)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, transition: 'all 0.2s' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={pinta.es_favorita ? colors.accent : 'none'} stroke={pinta.es_favorita ? colors.accent : '#aaa'} strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
               <CollageMini prendas={pinta} />
               <p style={{ fontSize: '0.8rem', fontWeight: 500, color: colors.textSoft, marginBottom: 3, fontFamily: fonts.body }}>{pinta.nombre}</p>
@@ -115,6 +175,57 @@ const MisPintas = () => {
               <button onClick={() => setPintaAEliminar(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={eliminarPinta} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(255,80,80,0.7)', color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Eliminar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pintaEditando && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 20px 80px 20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '24px 20px', width: '100%', maxWidth: 430, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h2 style={{ fontFamily: fonts.title, color: colors.textSoft, fontSize: '1.1rem', fontWeight: 600 }}>Editar pinta</h2>
+              <button onClick={() => setPintaEditando(null)} style={{ background: 'none', border: 'none', color: colors.textDim, fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <input
+              value={nombreEdit}
+              onChange={e => setNombreEdit(e.target.value)}
+              placeholder="Nombre de la pinta"
+              style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', color: colors.text, fontSize: '0.85rem', fontFamily: fonts.body, marginBottom: 14, boxSizing: 'border-box' }}
+            />
+
+            <p style={{ ...labelStyle, marginBottom: 8 }}>✦ categoría</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+              {categoriasOutfit.map(c => (
+                <button key={c} onClick={() => setCategoriaEdit(c)} style={{ padding: '6px 12px', borderRadius: 20, border: categoriaEdit === c ? 'none' : `1px solid ${colors.border}`, background: categoriaEdit === c ? colors.accent : 'transparent', color: categoriaEdit === c ? '#fff' : colors.textMuted, fontSize: '0.72rem', fontFamily: fonts.body, cursor: 'pointer' }}>{c}</button>
+              ))}
+            </div>
+
+            <p style={{ ...labelStyle, marginBottom: 8 }}>✦ prendas</p>
+            {slotsPrenda.map(({ key, label }) => (
+              <div key={key} style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: '0.7rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 6, textTransform: 'capitalize' }}>{label}</p>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                  {(key === 'chaqueta' || key === 'accesorio') && (
+                    <div onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: null }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, border: !seleccionEdit[key] ? `2px solid ${colors.accent}` : `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '0.62rem', color: colors.textMuted, fontFamily: fonts.body }}>ninguna</span>
+                    </div>
+                  )}
+                  {(prendasDisponibles[key] || []).map(p => (
+                    <div key={p.id} onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: p }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, overflow: 'hidden', background: '#fff', border: seleccionEdit[key]?.id === p.id ? `2px solid ${colors.accent}` : '2px solid transparent', cursor: 'pointer' }}>
+                      <img src={p.foto_url} alt={p.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    </div>
+                  ))}
+                  {(prendasDisponibles[key] || []).length === 0 && (
+                    <p style={{ fontSize: '0.72rem', color: colors.textDim, fontFamily: fonts.body, alignSelf: 'center' }}>No tienes prendas en esta categoría</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            <button onClick={guardarEdicion} disabled={guardandoEdicion} style={{ width: '100%', padding: '12px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg, #2a4abf, #5080ff)', color: '#fff', fontSize: '0.88rem', fontFamily: fonts.body, cursor: guardandoEdicion ? 'not-allowed' : 'pointer', marginTop: 6 }}>
+              {guardandoEdicion ? 'Guardando...' : 'Guardar cambios'}
+            </button>
           </div>
         </div>
       )}
