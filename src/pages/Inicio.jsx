@@ -162,7 +162,6 @@ const Inicio = ({ sesion }) => {
         )}
 
         <div className="today-actions">
-          <button className="btn-usar">Usar esta pinta</button>
           <button className="btn-cambiar" onClick={() => navigate('/armario')}>Cambiar</button>
         </div>
       </div>

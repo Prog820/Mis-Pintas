@@ -206,6 +206,11 @@ const Calendario = () => {
                         ))}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {pinta.chaqueta?.foto_url && (
+                          <div style={{ background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            <img src={pinta.chaqueta.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          </div>
+                        )}
                         {[pinta.bolso, pinta.zapatos, pinta.accesorio].map((p, i) => (
                           <div key={i} style={{ background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                             {p?.foto_url ? <img src={p.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.5rem', color: '#ccc' }}>—</span>}
