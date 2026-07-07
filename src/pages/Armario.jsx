@@ -191,10 +191,12 @@ const Armario = () => {
   const [previewModal, setPreviewModal] = useState(null)
   const inputRef = useRef(null)
   const [descripcionModal, setDescripcionModal] = useState('')
+  const [mostrarAvisoDescripcion, setMostrarAvisoDescripcion] = useState(false)
   const [generandoDesc, setGenerandoDesc] = useState(false)
   const [quitarFondoAuto, setQuitarFondoAuto] = useState(true)
   const [conChaqueta, setConChaqueta] = useState(false)
   const [prendaAEliminar, setPrendaAEliminar] = useState(null)
+
 
   useEffect(() => { cargarPrendas() }, [])
 
@@ -279,9 +281,18 @@ const Armario = () => {
   setGenerandoDesc(false)
 }
 
-  async function subirPrenda() {
-  if (!archivoModal || !nombreModal) return
-  setSubiendo(true)
+  function subirPrenda() {
+    if (!archivoModal || !nombreModal) return
+    if (!descripcionModal.trim()) {
+      setMostrarAvisoDescripcion(true)
+      return
+    }
+    guardarPrendaFinal()
+  }
+
+  async function guardarPrendaFinal() {
+    setMostrarAvisoDescripcion(false)
+    setSubiendo(true)
   try {
     let archivoFinal = archivoModal
 
@@ -597,6 +608,20 @@ const Armario = () => {
           </div>
         </div>
       )}
+
+      {mostrarAvisoDescripcion && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}>
+            <p style={{ fontSize: '0.9rem', color: colors.textSoft, fontFamily: fonts.body, marginBottom: 6, fontWeight: 500 }}>Sin descripción</p>
+            <p style={{ fontSize: '0.78rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 20 }}>La IA no tendrá en cuenta esta prenda para sugerir outfits. ¿Quieres continuar sin descripción o volver a agregar una?</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setMostrarAvisoDescripcion(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Volver</button>
+              <button onClick={guardarPrendaFinal} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: colors.accent, color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Continuar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {prendaAEliminar && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}>
