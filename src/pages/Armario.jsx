@@ -497,22 +497,22 @@ const Armario = () => {
             cargando={cargando}
             onEliminar={() => setPrendaAEliminar(get('bolso'))}
           />
-        </div>
-      </div>
 
-      <p style={{ fontSize: '0.68rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', fontFamily: fonts.body, margin: '14px 0 8px' }}>Accesorios</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-        {CATEGORIAS_ACCESORIO.map(cat => (
-          <MiniSlotAccesorio
-            key={cat}
-            prenda={get(cat)}
-            etiqueta={ETIQUETAS[cat]}
-            activo={accesoriosActivos[cat]}
-            onToggle={() => setAccesoriosActivos(prev => ({ ...prev, [cat]: !prev[cat] }))}
-            onAnterior={() => cambiar(cat, -1)}
-            onSiguiente={() => cambiar(cat, 1)}
-          />
-        ))}
+          <p style={{ fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', fontFamily: fonts.body, margin: '4px 0 0' }}>Accesorios</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {CATEGORIAS_ACCESORIO.map(cat => (
+              <MiniSlotAccesorio
+                key={cat}
+                prenda={get(cat)}
+                etiqueta={ETIQUETAS[cat]}
+                activo={accesoriosActivos[cat]}
+                onToggle={() => setAccesoriosActivos(prev => ({ ...prev, [cat]: !prev[cat] }))}
+                onAnterior={() => cambiar(cat, -1)}
+                onSiguiente={() => cambiar(cat, 1)}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
