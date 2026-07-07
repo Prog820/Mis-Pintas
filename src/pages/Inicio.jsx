@@ -62,7 +62,12 @@ const Inicio = ({ sesion }) => {
           pantalon:pantalon_id(*),
           bolso:bolso_id(*),
           zapatos:zapatos_id(*),
-          accesorio:accesorio_id(*)
+          accesorio_manillas:accesorio_manillas_id(*),
+          accesorio_aretes:accesorio_aretes_id(*),
+          accesorio_cabeza:accesorio_cabeza_id(*),
+          accesorio_anillos:accesorio_anillos_id(*),
+          accesorio_relojes:accesorio_relojes_id(*),
+          accesorio_collares:accesorio_collares_id(*)
         )
       `)
       .in('fecha', fechasSemana)
@@ -130,13 +135,20 @@ const Inicio = ({ sesion }) => {
           </div>
         ) : outfitHoy ? (
           <div className="today-outfit">
-            {[
+           {[
               { prenda: outfitHoy.bolso, label: 'bolso', cls: 'sm' },
               ...(outfitHoy.chaqueta ? [{ prenda: outfitHoy.chaqueta, label: 'chaqueta', cls: 'md' }] : []),
               { prenda: outfitHoy.top, label: 'camisa', cls: 'tall' },
               { prenda: outfitHoy.pantalon, label: 'pantalón', cls: 'tall' },
               { prenda: outfitHoy.zapatos, label: 'zapatos', cls: 'md' },
-              { prenda: outfitHoy.accesorio, label: 'accesorio', cls: 'sm' },
+              ...[
+                { prenda: outfitHoy.accesorio_manillas, label: 'manillas' },
+                { prenda: outfitHoy.accesorio_aretes, label: 'aretes' },
+                { prenda: outfitHoy.accesorio_cabeza, label: 'cabeza' },
+                { prenda: outfitHoy.accesorio_anillos, label: 'anillos' },
+                { prenda: outfitHoy.accesorio_relojes, label: 'relojes' },
+                { prenda: outfitHoy.accesorio_collares, label: 'collares' },
+              ].filter(a => a.prenda).map(a => ({ ...a, cls: 'sm' })),
             ].map(({ prenda, label, cls }) => (
               <div key={label} className="outfit-slot">
                 <div className={`outfit-img ${cls}`}>

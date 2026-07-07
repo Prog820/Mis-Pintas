@@ -5,8 +5,13 @@ import { quitarFondo } from '../lib/removebg'
 import { describirPrenda } from '../lib/gemini'
 import heic2any from 'heic2any'
 
-const CATEGORIAS = ['top', 'chaqueta', 'pantalon', 'bolso', 'zapatos', 'accesorio']
-const ETIQUETAS = { top: 'Top', chaqueta: 'Chaqueta', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos', accesorio: 'Accesorio' }
+const CATEGORIAS_ACCESORIO = ['accesorio_manillas', 'accesorio_aretes', 'accesorio_cabeza', 'accesorio_anillos', 'accesorio_relojes', 'accesorio_collares']
+const CATEGORIAS = ['top', 'chaqueta', 'pantalon', 'bolso', 'zapatos', ...CATEGORIAS_ACCESORIO]
+const ETIQUETAS = {
+  top: 'Top', chaqueta: 'Chaqueta', pantalon: 'Pantalón', bolso: 'Bolso', zapatos: 'Zapatos',
+  accesorio_manillas: 'Manillas', accesorio_aretes: 'Aretes', accesorio_cabeza: 'Cabeza',
+  accesorio_anillos: 'Anillos', accesorio_relojes: 'Relojes', accesorio_collares: 'Collares',
+}
 
 async function convertirAJpg(file) {
   return new Promise((resolve, reject) => {
@@ -177,9 +182,36 @@ function InsposTab() {
   )
 }
 
+function MiniSlotAccesorio({ prenda, etiqueta, activo, onToggle, onAnterior, onSiguiente }) {
+  return (
+    <div style={{ background: activo ? '#f5f7fc' : '#f0f0f0', borderRadius: 10, padding: 6, opacity: activo ? 1 : 0.45, transition: 'opacity 0.2s' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: '0.6rem', color: '#888', fontFamily: fonts.body }}>{etiqueta}</span>
+        <button onClick={onToggle} style={{ width: 26, height: 15, borderRadius: 999, border: 'none', cursor: 'pointer', background: activo ? colors.accent : '#ccc', position: 'relative', padding: 0, flexShrink: 0 }}>
+          <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: activo ? 13 : 2, transition: '0.2s' }} />
+        </button>
+      </div>
+      {activo && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <button onClick={onAnterior} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: '0.8rem', cursor: 'pointer', padding: '0 2px' }}>‹</button>
+          <div style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {prenda?.foto_url
+              ? <img src={prenda.foto_url} alt={etiqueta} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              : <span style={{ fontSize: '0.6rem', color: '#ccc' }}>—</span>
+            }
+          </div>
+          <button onClick={onSiguiente} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: '0.8rem', cursor: 'pointer', padding: '0 2px' }}>›</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const Armario = () => {
-  const [prendas, setPrendas] = useState({ top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] })
-  const [indices, setIndices] = useState({ top: 0, chaqueta: 0, pantalon: 0, bolso: 0, zapatos: 0, accesorio: 0 })
+  const vacioPorCategoria = () => Object.fromEntries(CATEGORIAS.map(cat => [cat, cat.startsWith('accesorio_') ? [] : []]))
+  const [prendas, setPrendas] = useState(vacioPorCategoria())
+  const [indices, setIndices] = useState(Object.fromEntries(CATEGORIAS.map(cat => [cat, 0])))
+  const [accesoriosActivos, setAccesoriosActivos] = useState(Object.fromEntries(CATEGORIAS_ACCESORIO.map(cat => [cat, false])))
   const [cargando, setCargando] = useState(true)
   const [subiendo, setSubiendo] = useState(false)
   const [guardado, setGuardado] = useState(false)
@@ -204,7 +236,7 @@ const Armario = () => {
     setCargando(true)
     const { data, error } = await supabase.from('prendas').select('*').order('created_at', { ascending: true })
     if (!error) {
-      const agrupadas = { top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
+      const agrupadas = vacioPorCategoria()
       data.forEach(p => { if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p) })
       setPrendas(agrupadas)
     }
@@ -337,7 +369,12 @@ const Armario = () => {
       pantalon_id: get('pantalon')?.id || null,
       bolso_id: get('bolso')?.id || null,
       zapatos_id: get('zapatos')?.id || null,
-      accesorio_id: get('accesorio')?.id || null,
+      accesorio_manillas_id: accesoriosActivos.accesorio_manillas ? get('accesorio_manillas')?.id || null : null,
+      accesorio_aretes_id: accesoriosActivos.accesorio_aretes ? get('accesorio_aretes')?.id || null : null,
+      accesorio_cabeza_id: accesoriosActivos.accesorio_cabeza ? get('accesorio_cabeza')?.id || null : null,
+      accesorio_anillos_id: accesoriosActivos.accesorio_anillos ? get('accesorio_anillos')?.id || null : null,
+      accesorio_relojes_id: accesoriosActivos.accesorio_relojes ? get('accesorio_relojes')?.id || null : null,
+      accesorio_collares_id: accesoriosActivos.accesorio_collares ? get('accesorio_collares')?.id || null : null,
     })
     if (!error) {
       setGuardado(true)
@@ -460,20 +497,26 @@ const Armario = () => {
             cargando={cargando}
             onEliminar={() => setPrendaAEliminar(get('bolso'))}
           />
-
-          <SlotPrenda
-            prenda={get('accesorio')}
-            etiqueta="Accesorio"
-            onAnterior={() => cambiar('accesorio', -1)}
-            onSiguiente={() => cambiar('accesorio', 1)}
-            altura={110}
-            cargando={cargando}
-            onEliminar={() => setPrendaAEliminar(get('accesorio'))}
-          />
         </div>
       </div>
+
+      <p style={{ fontSize: '0.68rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', fontFamily: fonts.body, margin: '14px 0 8px' }}>Accesorios</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+        {CATEGORIAS_ACCESORIO.map(cat => (
+          <MiniSlotAccesorio
+            key={cat}
+            prenda={get(cat)}
+            etiqueta={ETIQUETAS[cat]}
+            activo={accesoriosActivos[cat]}
+            onToggle={() => setAccesoriosActivos(prev => ({ ...prev, [cat]: !prev[cat] }))}
+            onAnterior={() => cambiar(cat, -1)}
+            onSiguiente={() => cambiar(cat, 1)}
+          />
+        ))}
+      </div>
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
-        {CATEGORIAS.map(cat => {
+        {CATEGORIAS.filter(cat => !cat.startsWith('accesorio_') || accesoriosActivos[cat]).map(cat => {
           const p = get(cat)
           return <span key={cat} style={{ fontSize: '0.72rem', fontFamily: fonts.body, background: '#eef2ff', color: colors.accentDim, padding: '3px 10px', borderRadius: 20 }}>{p ? p.nombre : ETIQUETAS[cat] + ' —'}</span>
         })}

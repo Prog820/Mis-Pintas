@@ -10,7 +10,12 @@ const slotsPrenda = [
   { key: 'pantalon', label: 'pantalón' },
   { key: 'zapatos', label: 'zapatos' },
   { key: 'bolso', label: 'bolso' },
-  { key: 'accesorio', label: 'accesorio' },
+  { key: 'accesorio_manillas', label: 'manillas' },
+  { key: 'accesorio_aretes', label: 'aretes' },
+  { key: 'accesorio_cabeza', label: 'cabeza' },
+  { key: 'accesorio_anillos', label: 'anillos' },
+  { key: 'accesorio_relojes', label: 'relojes' },
+  { key: 'accesorio_collares', label: 'collares' },
 ]
 
 function CollageMini({ prendas }) {
@@ -22,19 +27,33 @@ function CollageMini({ prendas }) {
       }
     </div>
   )
+  const accesorios = [
+    prendas?.accesorio_manillas, prendas?.accesorio_aretes, prendas?.accesorio_cabeza,
+    prendas?.accesorio_anillos, prendas?.accesorio_relojes, prendas?.accesorio_collares,
+  ].filter(a => a?.foto_url)
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 10 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.top} height={64} />
-        <Slot prenda={prendas?.pantalon} height={80} />
-        <Slot prenda={prendas?.zapatos} height={42} />
-      </div>
+    <div style={{ background: '#fff', borderRadius: 12, padding: 8, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <Slot prenda={prendas?.top} height={64} />
+          <Slot prenda={prendas?.pantalon} height={80} />
+          <Slot prenda={prendas?.zapatos} height={42} />
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.chaqueta} height={48} />
-        <Slot prenda={prendas?.bolso} height={42} />
-        <Slot prenda={prendas?.accesorio} height={42} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <Slot prenda={prendas?.chaqueta} height={48} />
+          <Slot prenda={prendas?.bolso} height={42} />
+        </div>
       </div>
+      {accesorios.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
+          {accesorios.map((a, i) => (
+            <div key={i} style={{ flex: 1, background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src={a.foto_url} alt={a.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -56,7 +75,7 @@ const MisPintas = () => {
   async function cargarPrendasDisponibles() {
     const { data, error } = await supabase.from('prendas').select('*').order('created_at', { ascending: true })
     if (!error) {
-      const agrupadas = { top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio: [] }
+      const agrupadas = { top: [], chaqueta: [], pantalon: [], bolso: [], zapatos: [], accesorio_manillas: [], accesorio_aretes: [], accesorio_cabeza: [], accesorio_anillos: [], accesorio_relojes: [], accesorio_collares: [] }
       data.forEach(p => { if (agrupadas[p.categoria]) agrupadas[p.categoria].push(p) })
       setPrendasDisponibles(agrupadas)
     }
@@ -66,7 +85,9 @@ const MisPintas = () => {
     setCargando(true)
     const { data, error } = await supabase
       .from('outfits')
-      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
+      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*),
+        accesorio_manillas:accesorio_manillas_id(*), accesorio_aretes:accesorio_aretes_id(*), accesorio_cabeza:accesorio_cabeza_id(*),
+        accesorio_anillos:accesorio_anillos_id(*), accesorio_relojes:accesorio_relojes_id(*), accesorio_collares:accesorio_collares_id(*)`)
       .order('created_at', { ascending: false })
     if (!error) setPintas(data)
     setCargando(false)
@@ -90,7 +111,10 @@ const MisPintas = () => {
     setCategoriaEdit(pinta.categoria)
     setSeleccionEdit({
       top: pinta.top, chaqueta: pinta.chaqueta, pantalon: pinta.pantalon,
-      zapatos: pinta.zapatos, bolso: pinta.bolso, accesorio: pinta.accesorio,
+      zapatos: pinta.zapatos, bolso: pinta.bolso,
+      accesorio_manillas: pinta.accesorio_manillas, accesorio_aretes: pinta.accesorio_aretes,
+      accesorio_cabeza: pinta.accesorio_cabeza, accesorio_anillos: pinta.accesorio_anillos,
+      accesorio_relojes: pinta.accesorio_relojes, accesorio_collares: pinta.accesorio_collares,
     })
   }
 
@@ -98,7 +122,7 @@ const MisPintas = () => {
     if (!nombreEdit.trim()) { alert('Ponle un nombre a tu pinta'); return }
     setGuardandoEdicion(true)
     try {
-      const { error } = await supabase.from('outfits').update({
+       const { error } = await supabase.from('outfits').update({
         nombre: nombreEdit.trim(),
         categoria: categoriaEdit,
         top_id: seleccionEdit.top?.id || null,
@@ -106,7 +130,12 @@ const MisPintas = () => {
         pantalon_id: seleccionEdit.pantalon?.id || null,
         zapatos_id: seleccionEdit.zapatos?.id || null,
         bolso_id: seleccionEdit.bolso?.id || null,
-        accesorio_id: seleccionEdit.accesorio?.id || null,
+        accesorio_manillas_id: seleccionEdit.accesorio_manillas?.id || null,
+        accesorio_aretes_id: seleccionEdit.accesorio_aretes?.id || null,
+        accesorio_cabeza_id: seleccionEdit.accesorio_cabeza?.id || null,
+        accesorio_anillos_id: seleccionEdit.accesorio_anillos?.id || null,
+        accesorio_relojes_id: seleccionEdit.accesorio_relojes?.id || null,
+        accesorio_collares_id: seleccionEdit.accesorio_collares?.id || null,
       }).eq('id', pintaEditando.id)
       if (error) throw error
       setPintaEditando(null)
@@ -206,7 +235,7 @@ const MisPintas = () => {
               <div key={key} style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: '0.7rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 6, textTransform: 'capitalize' }}>{label}</p>
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                  {(key === 'chaqueta' || key === 'accesorio') && (
+                  {(key === 'chaqueta' || key.startsWith('accesorio_')) && (
                     <div onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: null }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, border: !seleccionEdit[key] ? `2px solid ${colors.accent}` : `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                       <span style={{ fontSize: '0.62rem', color: colors.textMuted, fontFamily: fonts.body }}>ninguna</span>
                     </div>

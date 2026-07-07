@@ -18,19 +18,33 @@ function CollageMini({ prendas }) {
       }
     </div>
   )
+  const accesorios = [
+    prendas?.accesorio_manillas, prendas?.accesorio_aretes, prendas?.accesorio_cabeza,
+    prendas?.accesorio_anillos, prendas?.accesorio_relojes, prendas?.accesorio_collares,
+  ].filter(a => a?.foto_url)
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.top} height={70} />
-        <Slot prenda={prendas?.pantalon} height={85} />
-        <Slot prenda={prendas?.zapatos} height={42} />
-      </div>
+    <div style={{ background: '#fff', borderRadius: 12, padding: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <Slot prenda={prendas?.top} height={70} />
+          <Slot prenda={prendas?.pantalon} height={85} />
+          <Slot prenda={prendas?.zapatos} height={42} />
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <Slot prenda={prendas?.chaqueta} height={50} />
-        <Slot prenda={prendas?.bolso} height={42} />
-        <Slot prenda={prendas?.accesorio} height={42} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <Slot prenda={prendas?.chaqueta} height={50} />
+          <Slot prenda={prendas?.bolso} height={42} />
+        </div>
       </div>
+      {accesorios.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
+          {accesorios.map((a, i) => (
+            <div key={i} style={{ flex: 1, background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src={a.foto_url} alt={a.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -52,14 +66,16 @@ const Calendario = () => {
     const primerDia = fechaKey(anio, mes, 1)
     const ultimoDia = fechaKey(anio, mes, new Date(anio, mes + 1, 0).getDate())
 
+    const camposAccesorios = `accesorio_manillas:accesorio_manillas_id(*), accesorio_aretes:accesorio_aretes_id(*), accesorio_cabeza:accesorio_cabeza_id(*), accesorio_anillos:accesorio_anillos_id(*), accesorio_relojes:accesorio_relojes_id(*), accesorio_collares:accesorio_collares_id(*)`
+
     const { data: calData } = await supabase
       .from('calendario')
-      .select(`*, outfit:outfit_id(*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*))`)
+      .select(`*, outfit:outfit_id(*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), ${camposAccesorios})`)
       .gte('fecha', primerDia).lte('fecha', ultimoDia)
 
     const { data: pintasData } = await supabase
       .from('outfits')
-      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), accesorio:accesorio_id(*)`)
+      .select(`*, top:top_id(*), chaqueta:chaqueta_id(*), pantalon:pantalon_id(*), bolso:bolso_id(*), zapatos:zapatos_id(*), ${camposAccesorios}`)
       .order('created_at', { ascending: false })
 
     if (calData) {
@@ -211,11 +227,18 @@ const Calendario = () => {
                             <img src={pinta.chaqueta.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                           </div>
                         )}
-                        {[pinta.bolso, pinta.zapatos, pinta.accesorio].map((p, i) => (
+                        {[pinta.bolso, pinta.zapatos].map((p, i) => (
                           <div key={i} style={{ background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                             {p?.foto_url ? <img src={p.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.5rem', color: '#ccc' }}>—</span>}
                           </div>
                         ))}
+                        {[pinta.accesorio_manillas, pinta.accesorio_aretes, pinta.accesorio_cabeza, pinta.accesorio_anillos, pinta.accesorio_relojes, pinta.accesorio_collares]
+                          .filter(a => a?.foto_url)
+                          .map((a, i) => (
+                            <div key={i} style={{ background: '#f0f2f8', borderRadius: 6, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                              <img src={a.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            </div>
+                          ))}
                       </div>
                     </div>
                     <p style={{ fontSize: '0.72rem', color: colors.textSoft, fontFamily: fonts.body }}>{pinta.nombre}</p>

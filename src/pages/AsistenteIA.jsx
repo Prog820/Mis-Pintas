@@ -93,7 +93,12 @@ const AsistenteIA = () => {
       pantalon: encontrar('pantalon'),
       bolso: encontrar('bolso'),
       zapatos: encontrar('zapatos'),
-      accesorio: encontrar('accesorio'),
+      accesorio_manillas: encontrar('accesorio_manillas'),
+      accesorio_aretes: encontrar('accesorio_aretes'),
+      accesorio_cabeza: encontrar('accesorio_cabeza'),
+      accesorio_anillos: encontrar('accesorio_anillos'),
+      accesorio_relojes: encontrar('accesorio_relojes'),
+      accesorio_collares: encontrar('accesorio_collares'),
       explicacion: sugerencia.explicacion,
     })
   } catch (err) {
@@ -118,7 +123,12 @@ const AsistenteIA = () => {
         pantalon_id: resultado.pantalon?.id || null,
         bolso_id: resultado.bolso?.id || null,
         zapatos_id: resultado.zapatos?.id || null,
-        accesorio_id: resultado.accesorio?.id || null,
+        accesorio_manillas_id: resultado.accesorio_manillas?.id || null,
+        accesorio_aretes_id: resultado.accesorio_aretes?.id || null,
+        accesorio_cabeza_id: resultado.accesorio_cabeza?.id || null,
+        accesorio_anillos_id: resultado.accesorio_anillos?.id || null,
+        accesorio_relojes_id: resultado.accesorio_relojes?.id || null,
+        accesorio_collares_id: resultado.accesorio_collares?.id || null,
       })
       if (error) throw error
       setMostrarModalGuardar(false)
@@ -218,9 +228,13 @@ const AsistenteIA = () => {
           <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {resultado.bolso?.foto_url && <img src={resultado.bolso.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
           </div>
-          <div style={{ background: '#f0f2f8', borderRadius: 10, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {resultado.accesorio?.foto_url && <img src={resultado.accesorio.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
-          </div>
+          {[resultado.accesorio_manillas, resultado.accesorio_aretes, resultado.accesorio_cabeza, resultado.accesorio_anillos, resultado.accesorio_relojes, resultado.accesorio_collares]
+            .filter(a => a?.foto_url)
+            .map((a, i) => (
+              <div key={i} style={{ background: '#f0f2f8', borderRadius: 10, height: 50, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={a.foto_url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </div>
+            ))}
         </div>
     </div>
     <p style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.6, marginBottom: 14, fontFamily: fonts.body }}>{resultado.explicacion}</p>

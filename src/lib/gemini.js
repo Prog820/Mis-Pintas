@@ -96,13 +96,16 @@ Responde ÚNICAMENTE en este formato JSON exacto, sin texto adicional:
   "pantalon": "nombre exacto de la prenda",
   "bolso": "nombre exacto de la prenda",
   "zapatos": "nombre exacto de la prenda",
-  "accesorio": "nombre exacto de la prenda",
+  "accesorio_manillas": "nombre exacto de la prenda o 'ninguna'",
+  "accesorio_aretes": "nombre exacto de la prenda o 'ninguna'",
+  "accesorio_cabeza": "nombre exacto de la prenda o 'ninguna'",
+  "accesorio_anillos": "nombre exacto de la prenda o 'ninguna'",
+  "accesorio_relojes": "nombre exacto de la prenda o 'ninguna'",
+  "accesorio_collares": "nombre exacto de la prenda o 'ninguna'",
   "explicacion": "explicación breve en 2-3 oraciones de por qué este outfit combina con la inspiración"
 }
 
-Si la pinta no necesita una chaqueta, responde exactamente:
-
-"chaqueta": "ninguna"
+Si la pinta no necesita una chaqueta, o alguna categoría de accesorio no aporta al outfit, responde exactamente 'ninguna' en ese campo. No es obligatorio usar todas las categorías de accesorios — solo inclúyelas cuando realmente mejoren el outfit según la inspiración.
 
 Nunca inventes prendas que no estén en la lista disponible. Usa únicamente los nombres exactos proporcionados.`
           }
