@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { colors, fonts } from '../styles/global'
 
@@ -69,6 +69,7 @@ const MisPintas = () => {
   const [categoriaEdit, setCategoriaEdit] = useState('casual')
   const [seleccionEdit, setSeleccionEdit] = useState({})
   const [guardandoEdicion, setGuardandoEdicion] = useState(false)
+  const scrollRefs = useRef({})
 
   useEffect(() => { cargarPintas(); cargarPrendasDisponibles() }, [])
 
@@ -234,23 +235,38 @@ const MisPintas = () => {
             {slotsPrenda.map(({ key, label }) => (
               <div key={key} style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: '0.7rem', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 6, textTransform: 'capitalize' }}>{label}</p>
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                  {(key === 'chaqueta' || key.startsWith('accesorio_')) && (
-                    <div onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: null }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, border: !seleccionEdit[key] ? `2px solid ${colors.accent}` : `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                      <span style={{ fontSize: '0.62rem', color: colors.textMuted, fontFamily: fonts.body }}>ninguna</span>
-                    </div>
-                  )}
-                  {(prendasDisponibles[key] || []).map(p => (
-                    <div key={p.id} onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: p }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, overflow: 'hidden', background: '#fff', border: seleccionEdit[key]?.id === p.id ? `2px solid ${colors.accent}` : '2px solid transparent', cursor: 'pointer' }}>
-                      <img src={p.foto_url} alt={p.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                    </div>
-                  ))}
-                  {(prendasDisponibles[key] || []).length === 0 && (
-                    <p style={{ fontSize: '0.72rem', color: colors.textDim, fontFamily: fonts.body, alignSelf: 'center' }}>No tienes prendas en esta categoría</p>
+                <div style={{ position: 'relative' }}>
+                  <div ref={el => scrollRefs.current[key] = el} style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                    {(key === 'chaqueta' || key.startsWith('accesorio_')) && (
+                      <div onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: null }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, border: !seleccionEdit[key] ? `2px solid ${colors.accent}` : `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <span style={{ fontSize: '0.62rem', color: colors.textMuted, fontFamily: fonts.body }}>ninguna</span>
+                      </div>
+                    )}
+                    {(prendasDisponibles[key] || []).map(p => (
+                      <div key={p.id} onClick={() => setSeleccionEdit(prev => ({ ...prev, [key]: p }))} style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 10, overflow: 'hidden', background: '#fff', border: seleccionEdit[key]?.id === p.id ? `2px solid ${colors.accent}` : '2px solid transparent', cursor: 'pointer' }}>
+                        <img src={p.foto_url} alt={p.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                    ))}
+                    {(prendasDisponibles[key] || []).length === 0 && (
+                      <p style={{ fontSize: '0.72rem', color: colors.textDim, fontFamily: fonts.body, alignSelf: 'center' }}>No tienes prendas en esta categoría</p>
+                    )}
+                  </div>
+
+                  {(prendasDisponibles[key] || []).length > 0 && (
+                    <>
+                      <button className="carrusel-arrow" onClick={() => scrollRefs.current[key]?.scrollBy({ left: -140, behavior: 'smooth' })} style={{ position: 'absolute', left: -4, top: 18, width: 24, height: 24, borderRadius: '50%', border: `1px solid ${colors.border}`, background: 'rgba(6,8,16,0.85)', color: colors.accentLight, display: 'none', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '0.75rem' }}>‹</button>
+                      <button className="carrusel-arrow" onClick={() => scrollRefs.current[key]?.scrollBy({ left: 140, behavior: 'smooth' })} style={{ position: 'absolute', right: -4, top: 18, width: 24, height: 24, borderRadius: '50%', border: `1px solid ${colors.border}`, background: 'rgba(6,8,16,0.85)', color: colors.accentLight, display: 'none', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '0.75rem' }}>›</button>
+                    </>
                   )}
                 </div>
               </div>
             ))}
+
+            <style>{`
+              @media (hover: hover) and (pointer: fine) {
+                .carrusel-arrow { display: flex !important; }
+              }
+            `}</style>
 
             <button onClick={guardarEdicion} disabled={guardandoEdicion} style={{ width: '100%', padding: '12px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg, #2a4abf, #5080ff)', color: '#fff', fontSize: '0.88rem', fontFamily: fonts.body, cursor: guardandoEdicion ? 'not-allowed' : 'pointer', marginTop: 6 }}>
               {guardandoEdicion ? 'Guardando...' : 'Guardar cambios'}
