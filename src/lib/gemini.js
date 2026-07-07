@@ -81,7 +81,8 @@ Analiza cuidadosamente la foto de inspiración, la ocasión y las prendas dispon
 
 No es obligatorio usar una chaqueta. Solo inclúyela cuando realmente mejore el outfit o sea apropiada para la ocasión o el estilo de la imagen de referencia.
 
-Prioriza que el resultado se parezca visualmente a la inspiración utilizando únicamente las prendas disponibles.
+Prioriza que el resultado se parezca visualmente a la inspiración utilizando únicamente las prendas disponibles. Revisa muy bien los colores, estilos, estampados y texturas de la foto de inspiración y elige las prendas que mejor se asemejen a ella. Además, asegúrate de que el outfit sea coherente y armonioso en cuanto a colores, estilos y texturas. 
+Necesito que revises el largo que se indica en la descripción de cada prenda y que el outfit final sea visualmente equilibrado. Si en la fot de inspiración se usa un crop top, debes buscar un crop top, si es un pantalón con algún estampado, debes buscar que el pantalón que elijas tenga un estampado similar, y así con cada prenda. No inventes prendas que no estén en la lista disponible.
 
 PRENDAS DISPONIBLES:
 ${listaPrendas}

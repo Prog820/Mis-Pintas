@@ -13,6 +13,11 @@ const AsistenteIA = () => {
   const [subiendo, setSubiendo] = useState(false)
   const [resultado, setResultado] = useState(null)
   const inputRef = useRef(null)
+  const scrollInspoRef = useRef(null)
+  const [mostrarModalGuardar, setMostrarModalGuardar] = useState(false)
+  const [nombrePintaIA, setNombrePintaIA] = useState('')
+  const [categoriaPintaIA, setCategoriaPintaIA] = useState('casual')
+  const [guardandoPinta, setGuardandoPinta] = useState(false)
 
   useEffect(() => { cargarInspos() }, [])
 
@@ -99,6 +104,33 @@ const AsistenteIA = () => {
     setCargando(false)
   }
 
+  const guardarPintaIA = async () => {
+    if (!nombrePintaIA.trim()) { alert('Ponle un nombre a tu pinta'); return }
+    setGuardandoPinta(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('outfits').insert({
+        user_id: user.id,
+        nombre: nombrePintaIA.trim(),
+        categoria: categoriaPintaIA,
+        top_id: resultado.top?.id || null,
+        chaqueta_id: resultado.chaqueta?.id || null,
+        pantalon_id: resultado.pantalon?.id || null,
+        bolso_id: resultado.bolso?.id || null,
+        zapatos_id: resultado.zapatos?.id || null,
+        accesorio_id: resultado.accesorio?.id || null,
+      })
+      if (error) throw error
+      setMostrarModalGuardar(false)
+      setNombrePintaIA('')
+      alert('¡Pinta guardada!')
+    } catch (err) {
+      console.error('Error guardando pinta:', err)
+      alert('Hubo un error guardando la pinta. Intenta de nuevo.')
+    }
+    setGuardandoPinta(false)
+  }
+
   const labelStyle = { fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: colors.textMuted, fontFamily: fonts.body, marginBottom: 12 }
 
   return (
@@ -111,7 +143,8 @@ const AsistenteIA = () => {
 
       <p style={labelStyle}>✦ elige tu foto de inspo</p>
 
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, scrollbarWidth: 'none', marginBottom: 24 }}>
+      <div style={{ position: 'relative', marginBottom: 24 }}>
+      <div ref={scrollInspoRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, scrollbarWidth: 'none' }}>
         <div onClick={() => !subiendo && inputRef.current?.click()} style={{ flexShrink: 0, width: 80, height: 100, borderRadius: 14, border: `1.5px dashed ${colors.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: subiendo ? 'not-allowed' : 'pointer', gap: 4, opacity: subiendo ? 0.5 : 1 }}>
           <span style={{ fontSize: '1.4rem', color: colors.textDim }}>{subiendo ? '...' : '+'}</span>
           <span style={{ fontSize: '0.65rem', color: colors.textMuted, textAlign: 'center', lineHeight: 1.3, fontFamily: fonts.body }}>{subiendo ? 'Subiendo...' : 'Agregar inspo'}</span>
@@ -129,6 +162,16 @@ const AsistenteIA = () => {
             <p style={{ fontSize: '0.82rem', color: colors.textMuted, fontFamily: fonts.body }}>Sube tu primera foto de inspiración</p>
           </div>
         )}
+      </div>
+
+      <button className="inspo-arrow" onClick={() => scrollInspoRef.current?.scrollBy({ left: -180, behavior: 'smooth' })} style={{ position: 'absolute', left: -6, top: 42, width: 30, height: 30, borderRadius: '50%', border: `1px solid ${colors.border}`, background: 'rgba(6,8,16,0.85)', color: colors.accentLight, display: 'none', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>‹</button>
+      <button className="inspo-arrow" onClick={() => scrollInspoRef.current?.scrollBy({ left: 180, behavior: 'smooth' })} style={{ position: 'absolute', right: -6, top: 42, width: 30, height: 30, borderRadius: '50%', border: `1px solid ${colors.border}`, background: 'rgba(6,8,16,0.85)', color: colors.accentLight, display: 'none', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>›</button>
+
+      <style>{`
+        @media (hover: hover) and (pointer: fine) {
+          .inspo-arrow { display: flex !important; }
+        }
+      `}</style>
       </div>
 
       <p style={labelStyle}>✦ ocasión</p>
@@ -182,11 +225,34 @@ const AsistenteIA = () => {
     </div>
     <p style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.6, marginBottom: 14, fontFamily: fonts.body }}>{resultado.explicacion}</p>
     <div style={{ display: 'flex', gap: 8 }}>
-      <button style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#0a1540', color: colors.accentLight, fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Guardar pinta</button>
+      <button onClick={() => setMostrarModalGuardar(true)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#0a1540', color: colors.accentLight, fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Guardar pinta</button>
       <button onClick={crearPinta} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #eef2ff', background: 'transparent', color: '#3a5abf', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: fonts.body }}>Intentar de nuevo</button>
     </div>
   </div>
 )}
+
+  {mostrarModalGuardar && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0d1530', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 340 }}>
+            <p style={{ fontSize: '0.95rem', color: colors.textSoft, fontFamily: fonts.body, marginBottom: 16, fontWeight: 500 }}>Guardar pinta</p>
+            <input
+              value={nombrePintaIA}
+              onChange={e => setNombrePintaIA(e.target.value)}
+              placeholder="Nombre de la pinta"
+              style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'rgba(255,255,255,0.03)', color: colors.text, fontSize: '0.85rem', fontFamily: fonts.body, marginBottom: 14, boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+              {ocasiones.map(o => (
+                <button key={o} onClick={() => setCategoriaPintaIA(o)} style={{ padding: '6px 12px', borderRadius: 20, border: categoriaPintaIA === o ? 'none' : `1px solid ${colors.border}`, background: categoriaPintaIA === o ? colors.accent : 'transparent', color: categoriaPintaIA === o ? '#fff' : colors.textMuted, fontSize: '0.72rem', fontFamily: fonts.body, cursor: 'pointer' }}>{o}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setMostrarModalGuardar(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${colors.border}`, background: 'transparent', color: colors.textMuted, fontSize: '0.82rem', fontFamily: fonts.body, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={guardarPintaIA} disabled={guardandoPinta} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #2a4abf, #5080ff)', color: '#fff', fontSize: '0.82rem', fontFamily: fonts.body, cursor: guardandoPinta ? 'not-allowed' : 'pointer' }}>{guardandoPinta ? 'Guardando...' : 'Guardar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
